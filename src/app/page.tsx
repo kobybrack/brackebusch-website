@@ -4,8 +4,6 @@ const config = {
     host: 'brackebusch-web-db.postgres.database.azure.com',
     // Do not hard code your username and password.
     // Consider using Node environment variables.
-    user: 'redacted',
-    password: 'redacted',
     database: 'postgres',
     port: 5432,
     ssl: true
@@ -31,8 +29,6 @@ function queryDatabase() {
             rows.map(row => {
                 console.log(`Read: ${JSON.stringify(row)}`);
             });
-
-            process.exit();
         })
         .catch(err => {
             console.log(err);
