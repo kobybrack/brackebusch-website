@@ -2,8 +2,8 @@ import pg from 'pg';
 
 const config = {
     host: 'brackebusch-web-db.postgres.database.azure.com',
-    // Do not hard code your username and password.
-    // Consider using Node environment variables.
+    user: process.env.DB_USER_NAME,
+    password: process.env.DB_PASSWORD,
     database: 'postgres',
     port: 5432,
     ssl: true
