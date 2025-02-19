@@ -9,9 +9,9 @@ export default async function Page() {
         <div className={`${commonStyles.flexContainer} ${postStyles.postsContainer}`}>
             <h1 className={postStyles.postsHeaderText}>Here are the most recent posts:</h1>
             {posts.map((post) => (
-                <button className="btn" key={post.id}>
-                    <Link href={`/posts/${post.postKey}`}>{post.title}</Link>
-                </button>
+                <Link key={post.id} href={`/posts/${post.postKey}`}>
+                    <button className="btn">{post.title}</button>
+                </Link>
             ))}
         </div>
     );
