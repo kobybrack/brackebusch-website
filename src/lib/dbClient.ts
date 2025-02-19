@@ -1,29 +1,16 @@
-import pg from 'pg';
+import { neon, NeonQueryFunction } from '@neondatabase/serverless';
 import { Post } from './types';
 
-const config = {
-    host: 'brackebusch-web-db.postgres.database.azure.com',
-    user: process.env.DB_USER_NAME,
-    password: process.env.DB_PASSWORD,
-    database: 'postgres',
-    port: 5432,
-    ssl: true,
-};
-
 class DbClient {
-    private client: pg.Client;
+    private client: NeonQueryFunction<false, false>;
 
     constructor() {
-        this.client = new pg.Client(config);
-        this.client.connect((err) => {
-            if (err) throw err;
-        });
+        this.client = neon(`${process.env.DATABASE_URL}`);
     }
 
     async getPostFromKey(postKey: string): Promise<Post> {
         const query = 'SELECT * FROM posts WHERE post_key = $1;';
-        const res = await this.client.query(query, [postKey]);
-        const rows = res.rows;
+        const rows = await this.client(query, [postKey]);
         if (rows.length === 0) {
             throw new Error('Post not found');
         }
@@ -43,8 +30,7 @@ class DbClient {
 
     async getPosts(limit: number = 10, offset: number = 0): Promise<Post[]> {
         const query = 'SELECT * FROM posts ORDER BY created_at DESC LIMIT $1 OFFSET $2;';
-        const res = await this.client.query(query, [limit, offset]);
-        const rows = res.rows;
+        const rows = await this.client(query, [limit, offset]);
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,
