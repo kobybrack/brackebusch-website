@@ -1,7 +1,14 @@
+import Link from 'next/link';
+import homeStyles from '@/styles/home.module.css';
+import commonStyles from '@/styles/common.module.css';
+
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      in progress
-    </div>
-  );
+    return (
+        <div className={`${commonStyles.flexContainer}`}>
+            <h1 className={homeStyles.welcomeText}>Welcome!</h1>
+            <Link href="/posts">
+                <button className="btn">Posts page</button>
+            </Link>
+        </div>
+    );
 }
