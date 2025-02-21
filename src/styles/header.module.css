@@ -17,8 +17,10 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    @apply menu menu-horizontal;
 }
 
 .navItem {
     margin-right: 20px;
+    @apply text-lg;
 }
