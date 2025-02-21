@@ -6,21 +6,13 @@ export const Header = () => {
         <header className={styles.header}>
             <nav className={styles.nav}>
                 <ul className={styles.navList}>
-                    <li>
-                        <Link href="/">
-                            <b>Home</b>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/about">
-                            <b>About</b>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/posts">
-                            <b>Posts</b>
-                        </Link>
-                    </li>
+                    {['Home', 'About', 'Posts'].map((text, index) => (
+                        <li key={index}>
+                            <Link className={styles.navItem} href={`/${text.toLowerCase()}`}>
+                                <b>{text}</b>
+                            </Link>
+                        </li>
+                    ))}
                 </ul>
             </nav>
         </header>

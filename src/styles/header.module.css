@@ -17,9 +17,8 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    li {
-        @apply link;
-        /* text-decoration: underline; */
-        margin-right: 20px;
-    }
+}
+
+.navItem {
+    margin-right: 20px;
 }
