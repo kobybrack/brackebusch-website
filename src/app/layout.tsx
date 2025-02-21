@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import './globals.css';
+import '@/app/globals.css';
+import styles from '@/styles/root.module.css';
+import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
     title: 'Brackebusch',
@@ -12,7 +14,10 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body>{children}</body>
+            <body>
+                <Header />
+                <main>{children}</main>
+            </body>
         </html>
     );
 }
