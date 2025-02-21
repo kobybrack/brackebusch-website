@@ -1,5 +1,4 @@
 import type { Config } from 'tailwindcss';
-import daisyui from 'daisyui';
 
 export default {
     content: [
@@ -19,18 +18,18 @@ export default {
         themes: [
             {
                 mytheme: {
-                    primary: '#d1d5db',
-                    secondary: '#d1d5db',
+                    primary: '#f5f5f4',
+                    secondary: '#d6d3d1',
                     accent: '#60a5fa',
-                    neutral: '#374151',
-                    'base-100': '#374151',
-                    info: '#a78bfa',
-                    success: '#86efac',
-                    warning: '#fef08a',
-                    error: '#ef4444',
+                    neutral: '#6b7280',
+                    'base-100': '#9ca3af',
+                    info: '#c4b5fd',
+                    success: '#bbf7d0',
+                    warning: '#fef3c7',
+                    error: '#fca5a5',
                 },
             },
         ],
     },
-    plugins: [daisyui],
+    plugins: [require('@tailwindcss/typography'), require('daisyui')],
 } satisfies Config;
