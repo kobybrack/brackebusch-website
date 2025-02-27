@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import '@/app/globals.css';
-import styles from '@/styles/root.module.css';
-import { Header } from '@/components/Header';
+import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
     title: 'Brackebusch',
+    description: "Koby's website about his life",
 };
 
 export default function RootLayout({
@@ -12,10 +12,13 @@ export default function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    
     return (
         <html lang="en">
             <body>
-                <Header />
+                <header>
+                    <Navbar/>
+                </header>
                 <main>{children}</main>
             </body>
         </html>
