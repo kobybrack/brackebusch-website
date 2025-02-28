@@ -18,5 +18,3 @@ On the current roadmap:
 * comment replies
 * emails for comments/comment replies
 * guest posts
-
-This project is a lot of fun. I love how easy to use Vercel is.
