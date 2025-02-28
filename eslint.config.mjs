@@ -44,6 +44,7 @@ export default [
             'no-underscore-dangle': ['error'],
             'import/no-unresolved': 'off',
             'no-unused-vars': 0,
+            quotes: ['single', 'backtick'],
         },
     },
     ...compat.extends('next/core-web-vitals', 'next/typescript'),
