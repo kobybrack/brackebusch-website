@@ -10,7 +10,6 @@ export default async function Page({ params }: { params: Promise<{ postKey: stri
     const renderPost = async () => {
         const postKey = (await params).postKey;
         const result = await dbClient.getPostAndNearByPosts(postKey);
-        console.log('this is the result', result);
         if (result && result.post) {
             const { post, previous, next } = result;
             return (

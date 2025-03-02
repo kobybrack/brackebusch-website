@@ -87,7 +87,6 @@ class DbClient {
     }
 
     async getPosts(): Promise<Post[]> {
-        console.log('getting posts...');
         const query = 'SELECT * FROM posts ORDER BY created_at DESC';
         const rows = await this.client(query);
         return rows.map((row) => {
