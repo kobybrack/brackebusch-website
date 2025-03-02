@@ -1,16 +1,36 @@
+import { LoadingComponent } from '@/components/LoadingComponent';
+import { PostComponent } from '@/components/PostComponent';
+import { PostNavigationButtons } from '@/components/PostNavigationButtons';
 import dbClient from '@/lib/dbClient';
-import Markdown from 'react-markdown';
+import { Suspense, cache } from 'react';
 
 // Dynamic posts page
 export default async function Page({ params }: { params: Promise<{ postKey: string }> }) {
-    const postKey = (await params).postKey;
-    const post = await dbClient.getPostFromKey(postKey as string);
-    return (
-        <div className="w-full px-8">
-            <div className="prose mx-auto">
-                <h1>{post.title}</h1>
-                <Markdown>{post.content}</Markdown>
-            </div>
-        </div>
-    );
+    const loadingText = 'Loading post...';
+    const renderPost = async () => {
+        const postKey = (await params).postKey;
+        const result = await dbClient.getPostAndNearByPosts(postKey);
+        console.log('this is the result', result);
+        if (result && result.post) {
+            const { post, previous, next } = result;
+            return (
+                <div className="flex flex-col justify-between px-8 h-full">
+                    <PostComponent post={post} />
+                    <div className="flex flex-col text-sm text-base-content/25 w-full max-w-screen-md mx-auto">
+                        {post.updatedAt !== post.createdAt && <span>Updated:</span>}
+                        <span>
+                            {new Date(post.createdAt).toLocaleDateString('en-us', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                            })}
+                        </span>
+                    </div>
+                    <PostNavigationButtons previousPost={previous} nextPost={next} />
+                </div>
+            );
+        }
+        return <div>Post not found</div>;
+    };
+    return <Suspense fallback={<LoadingComponent loadingText={loadingText} />}>{renderPost()}</Suspense>;
 }
