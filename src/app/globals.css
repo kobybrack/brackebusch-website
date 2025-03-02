@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
 body {
-    font-family: 'Helvetica', sans-serif;
+    --spacing: 1;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: auto;
+}
+
+body {
+    min-height: 100%;
+}
+
+main {
+    flex-grow: 1;
+    overflow: auto;
 }
