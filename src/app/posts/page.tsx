@@ -21,7 +21,7 @@ export default async function Page() {
                         year: 'numeric',
                     });
                     return (
-                        <div key={post.id} className="card card-border w-96 card-md shadow-sm">
+                        <div key={post.id} className="card card-bordered w-96 card-md shadow-sm">
                             <div className="card-body">
                                 <Link href={`/posts/${post.postKey}`} className="no-underline">
                                     <h2 className="card-title m-0 link link-hover">{post.title}</h2>
