@@ -2,7 +2,7 @@ import { LoadingComponent } from '@/components/LoadingComponent';
 import { PostComponent } from '@/components/PostComponent';
 import { PostNavigationButtons } from '@/components/PostNavigationButtons';
 import dbClient from '@/lib/dbClient';
-import { Suspense, cache } from 'react';
+import { Suspense } from 'react';
 
 // Dynamic posts page
 export default async function Page({ params }: { params: Promise<{ postKey: string }> }) {

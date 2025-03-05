@@ -21,3 +21,13 @@ main {
     flex-grow: 1;
     overflow: auto;
 }
+
+.yarl__root {
+    --yarl__color_backdrop: rgba(0, 0, 0, 0.5);
+    .yarl__thumbnails_thumbnail {
+        background: none;
+    }
+    .yarl__thumbnails_container {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+}
