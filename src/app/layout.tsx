@@ -1,7 +1,10 @@
 import '@/app/globals.css';
+import 'yet-another-react-lightbox/styles.css';
+import 'yet-another-react-lightbox/plugins/thumbnails.css';
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Noto_Sans } from 'next/font/google';
+
 const notoSans = Noto_Sans({
     subsets: ['latin'],
 });
