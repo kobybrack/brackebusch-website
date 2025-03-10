@@ -11,7 +11,7 @@ const notoSans = Noto_Sans({
 
 export const metadata: Metadata = {
     title: 'Brackebusch',
-    description: "Koby's website about his life",
+    description: "Koby Brackebusch's website",
 };
 
 export default function RootLayout({
@@ -22,10 +22,10 @@ export default function RootLayout({
     return (
         <html lang="en" className={notoSans.className}>
             <body>
-                <header className="pt-4 sm:pt-8">
+                <header className="pt-6 pb-6">
                     <Navbar />
                 </header>
-                <main>{children}</main>
+                <main className="px-8">{children}</main>
                 <footer className="pt-2 pb-8" />
             </body>
         </html>

@@ -6,6 +6,7 @@ const headerPages = {
     Home: '/',
     About: '/about',
     Posts: '/posts',
+    Editor: '/editor',
 };
 
 export const Navbar = () => {
@@ -35,10 +36,15 @@ export const Navbar = () => {
 
     return (
         <div className="w-full z-50 flex justify-center">
-            <div className={`navbar bg-base-100 w-11/12 mx-auto`}>
+            <div className="navbar">
                 <div className="navbar-start">
                     <div className="dropdown" onClick={showMenu}>
-                        <div tabIndex={0} role="button" className="btn btn-ghost sm:hidden">
+                        <div
+                            tabIndex={0}
+                            role="button"
+                            className="btn btn-ghost sm:hidden"
+                            style={{ marginLeft: '.5rem' }}
+                        >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-5 w-5"

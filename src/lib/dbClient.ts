@@ -58,14 +58,10 @@ class DbClient {
         return posts;
     }
 
-    async getNextAndPreviousPosts(
-        previousPostId: number,
-        nextPostId: number,
-    ): Promise<{ previousPost: Post | undefined; nextPost: Post | undefined }> {
-        const ids = [previousPostId, nextPostId];
-        const query = `SELECT * FROM posts WHERE id = ANY($1);`;
-        const rows = await this.client(query, [ids]);
-        return rows.reduce((acc, row) => {
+    async getPosts(): Promise<Post[]> {
+        const query = 'SELECT * FROM posts ORDER BY created_at DESC';
+        const rows = await this.client(query);
+        return rows.map((row) => {
             const post: Post = {
                 id: row.id,
                 title: row.title,
@@ -76,19 +72,20 @@ class DbClient {
                 rawText: row.raw_text,
                 postKey: row.post_key,
             };
-            if (row.id === ids[0]) {
-                acc.previousPost = post;
-            } else if (row.id === ids[1]) {
-                acc.nextPost = post;
-            }
-
-            return acc;
-        }, {} as any);
+            return post;
+        });
     }
 
-    async getPosts(): Promise<Post[]> {
-        const query = 'SELECT * FROM posts ORDER BY created_at DESC';
+    async getLatestPosts(): Promise<Post[]> {
+        const query = `
+            SELECT *
+            FROM posts
+            ORDER BY id DESC
+            LIMIT 3`;
         const rows = await this.client(query);
+        if (!rows.length) {
+            throw new Error('no posts in database!');
+        }
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,
