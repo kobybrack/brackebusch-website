@@ -6,7 +6,6 @@ import { Suspense } from 'react';
 
 // Home page
 export default function Home() {
-    const thing = 'hey';
     const renderLatestPosts = async () => {
         const posts = await dbClient.getLatestPosts();
         return (
