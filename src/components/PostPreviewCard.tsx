@@ -15,14 +15,14 @@ export const PostPreviewCard = ({ post }: PostPreviewCardProps) => {
         year: 'numeric',
     });
     return (
-        <div key={post.id} className="card card-bordered card-md shadow-sm w-full">
-            <div className="card-body">
-                <Link href={`/posts/${post.postKey}`} className="no-underline">
-                    <h2 className="card-title m-0 link link-hover">{post.title}</h2>
-                </Link>
-                <p className="text-left m-0">{postPreview + (truncatedPreview ? '...' : '')}</p>
-                <p className="text-left text-sm text-base-content/25 m-0">{postDateString}</p>
+        <Link key={post.id} href={`/posts/${post.postKey}`} className="w-full no-underline">
+            <div className="card card-bordered card-md shadow-sm w-full btn-ghost">
+                <div className="card-body">
+                    <h2 className="card-title m-0">{post.title}</h2>
+                    <p className="text-left m-0">{postPreview + (truncatedPreview ? '...' : '')}</p>
+                    <p className="text-left text-sm text-base-content/25 m-0">{postDateString}</p>
+                </div>
             </div>
-        </div>
+        </Link>
     );
 };

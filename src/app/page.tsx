@@ -6,9 +6,16 @@ import { Suspense } from 'react';
 
 // Home page
 export default function Home() {
+    const thing = 'hey';
     const renderLatestPosts = async () => {
         const posts = await dbClient.getLatestPosts();
-        return <div className="flex flex-col gap-6">{posts.map((post) => PostPreviewCard({ post }))}</div>;
+        return (
+            <div className="flex flex-col gap-6">
+                {posts.map((post) => (
+                    <PostPreviewCard key={post.id} post={post} />
+                ))}
+            </div>
+        );
     };
     return (
         <div className="w-full max-w-screen-md mx-auto h-full">

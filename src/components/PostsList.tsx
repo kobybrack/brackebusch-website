@@ -14,6 +14,7 @@ export const PostsList = ({ posts }: PostsListProps) => {
     return (
         <div className="flex flex-col justify-center items-center gap-6 mx-auto w-full max-w-screen-md">
             <input
+                autoComplete="off"
                 placeholder="Search"
                 className="input input-bordered mt-1 w-[99%]"
                 value={searchText}
@@ -25,7 +26,9 @@ export const PostsList = ({ posts }: PostsListProps) => {
                     const rawContent = post.rawText.toLowerCase();
                     return rawTitle.includes(searchText) || rawContent.includes(searchText);
                 })
-                .map((post) => PostPreviewCard({ post }))}
+                .map((post) => (
+                    <PostPreviewCard key={post.id} post={post} />
+                ))}
         </div>
     );
 };
