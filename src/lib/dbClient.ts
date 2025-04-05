@@ -46,10 +46,10 @@ class DbClient {
                 id: row.id,
                 title: row.title,
                 content: row.content,
+                rawText: row.raw_text,
                 createdAt: row.created_at.toISOString(),
                 updatedAt: row.updated_at.toISOString(),
                 contentType: row.content_type,
-                rawText: row.raw_text,
                 postKey: row.post_key,
             };
             acc[row.position_label] = post;
@@ -61,15 +61,18 @@ class DbClient {
     async getPosts(): Promise<Post[]> {
         const query = 'SELECT * FROM posts ORDER BY created_at DESC';
         const rows = await this.client(query);
+        if (!rows.length) {
+            throw new Error('no posts in database!');
+        }
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,
                 title: row.title,
                 content: row.content,
+                rawText: row.raw_text,
                 createdAt: row.created_at.toISOString(),
                 updatedAt: row.updated_at.toISOString(),
                 contentType: row.content_type,
-                rawText: row.raw_text,
                 postKey: row.post_key,
             };
             return post;
@@ -91,14 +94,77 @@ class DbClient {
                 id: row.id,
                 title: row.title,
                 content: row.content,
+                rawText: row.raw_text,
                 createdAt: row.created_at.toISOString(),
                 updatedAt: row.updated_at.toISOString(),
                 contentType: row.content_type,
-                rawText: row.raw_text,
                 postKey: row.post_key,
             };
             return post;
         });
+    }
+
+    async upsertPost(formData: FormData): Promise<Post> {
+        if (!formData.get('id')) {
+            return await this.insertPost(formData);
+        }
+        return await this.updatePost(formData);
+    }
+
+    async insertPost(formData: FormData): Promise<Post> {
+        const query = `
+            INSERT INTO posts (title, content, content_type, post_key, missionary_post)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *`;
+
+        const title = formData.get('title') as string;
+        const content = formData.get('content') as string;
+        const contentType = formData.get('content_type') as string;
+        const postKey = formData.get('post_key') as string;
+        const missionaryPost = formData.get('missionary_post') === 'true';
+
+        const rows = await this.client(query, [title, content, contentType, postKey, missionaryPost]);
+        const row = rows[0];
+        const post: Post = {
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            rawText: row.raw_text,
+            createdAt: row.created_at.toISOString(),
+            updatedAt: row.updated_at.toISOString(),
+            contentType: row.content_type,
+            postKey: row.post_key,
+        };
+        return post;
+    }
+
+    async updatePost(formData: FormData): Promise<Post> {
+        const query = `
+            UPDATE posts
+            SET title = $1, content = $2, content_type = $3, post_key = $4, missionary_post = $5
+            WHERE id = $6
+            RETURNING *`;
+
+        const title = formData.get('title') as string;
+        const content = formData.get('content') as string;
+        const contentType = formData.get('content_type') as string;
+        const postKey = formData.get('post_key') as string;
+        const missionaryPost = formData.get('missionary_post') === 'true';
+        const id = parseInt(formData.get('id') as string, 10);
+
+        const rows = await this.client(query, [title, content, contentType, postKey, missionaryPost, id]);
+        const row = rows[0];
+        const post: Post = {
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            rawText: row.raw_text,
+            createdAt: row.created_at.toISOString(),
+            updatedAt: row.updated_at.toISOString(),
+            contentType: row.content_type,
+            postKey: row.post_key,
+        };
+        return post;
     }
 }
 
