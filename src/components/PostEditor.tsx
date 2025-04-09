@@ -43,7 +43,6 @@ export const PostEditor = ({ text, setText, title, setTitle, setIsMissionaryPost
             let start = event.target.selectionStart;
             let end = event.target.selectionEnd;
             const subString = text.substring(start, end); // Substring will be '' if no selection
-            console.log('subString', JSON.stringify(subString));
 
             switch (event.key) {
                 case 'b': // Ctrl + B for bold

@@ -69,7 +69,7 @@ export const Navbar = () => {
                         </ul>
                     </div>
                 </div>
-                <div className="navbar-center border-solid border-b-2 border-base-300 max-w-screen-md">
+                <div className="navbar-center">
                     <ul className="hidden sm:flex gap-6 list-none m-0 p-0 menu menu-horizontal">{navItems}</ul>
                 </div>
                 <div className="navbar-end">{/* TODO add account */}</div>
