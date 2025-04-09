@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { submitPost } from '../../lib/actions';
 import { PostEditor } from '@/components/PostEditor';
 
+const markDownRegex =
+    /(!\[.*?\]\(.*?\))|(\[.*?\]\(.*?\))|(`{3}.*?\n[\s\S]*?\n`{3})|(`[^`]+`)|(\*\*.*?\*\*)|(__.*?__)|(\*.*?\*)|(_.*?_)|(~~.*?~~)|(^>.*?$)|(^#+\s?.*$)|(-\s)|(\*\s)|(\d+\.\s)|(---)|(\*\*\*+)|(\\.)/gm;
+
 // Editor page
 export default function Page() {
     const [text, setText] = useState<string>('');
@@ -14,6 +17,7 @@ export default function Page() {
     const formAction = async (formData: FormData) => {
         (document.getElementById('submit_modal') as any).showModal();
         formData.append('content', text);
+        formData.append('raw_text', title + text.replace(markDownRegex, ''));
         formData.append('title', title);
         const postKey = title.replace(/\s+/g, '-').toLowerCase().slice(0, 50);
         formData.append('post_key', postKey);
