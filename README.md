@@ -2,9 +2,6 @@ This is a Next.js project I made to create a blog. Instead of doing static posts
 
 On the current roadmap:
 
-- post editor (password protected)
-- unit tests...
-- some fun pages like "favorite music/hobby right now" or equivalent
 - accounts (Oauth?)
 - comments
 - comment replies
