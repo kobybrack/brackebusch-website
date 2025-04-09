@@ -61,6 +61,9 @@ class DbClient {
     async getPosts(): Promise<Post[]> {
         const query = 'SELECT * FROM posts ORDER BY created_at DESC';
         const rows = await this.client(query);
+        if (!rows.length) {
+            throw new Error('no posts in database!');
+        }
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,

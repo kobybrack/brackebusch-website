@@ -6,6 +6,7 @@ const headerPages = {
     Home: '/',
     About: '/about',
     Posts: '/posts',
+    Editor: '/editor',
 };
 
 export const Navbar = () => {
