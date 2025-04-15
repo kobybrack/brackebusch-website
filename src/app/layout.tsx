@@ -2,8 +2,8 @@ import '@/app/globals.css';
 import 'yet-another-react-lightbox/styles.css';
 import 'yet-another-react-lightbox/plugins/thumbnails.css';
 import type { Metadata } from 'next';
-import { Navbar } from '@/components/Navbar';
 import { Noto_Sans } from 'next/font/google';
+import { ServerNavbarWrapper } from '@/components/ServerNavbarWrapper';
 
 const notoSans = Noto_Sans({
     subsets: ['latin'],
@@ -23,7 +23,8 @@ export default function RootLayout({
         <html lang="en" className={notoSans.className}>
             <body>
                 <header className="pt-6 pb-6">
-                    <Navbar />
+                    <ServerNavbarWrapper />
+                    {/* <Navbar /> */}
                 </header>
                 <main className="px-8">{children}</main>
                 <footer className="pt-2 pb-8" />
