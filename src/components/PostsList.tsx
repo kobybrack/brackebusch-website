@@ -12,11 +12,11 @@ export const PostsList = ({ posts }: PostsListProps) => {
     const [searchText, setSearchText] = useState('');
 
     return (
-        <div className="flex flex-col justify-center items-center gap-6 mx-auto w-full max-w-screen-md">
+        <div className="flex flex-col justify-center items-center gap-6 mx-auto w-full max-w-(--breakpoint-md)">
             <input
                 autoComplete="off"
                 placeholder="Search"
-                className="input input-bordered mt-1 w-[99%]"
+                className="input mt-1 w-[99%]"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target?.value.toLowerCase())}
             ></input>

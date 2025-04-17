@@ -5,6 +5,33 @@ import { checkPassword } from '@/lib/authenticationHelpers';
 import dbClient from '@/lib/dbClient';
 import { generateUsername, getEffectiveRoles } from './lib/miscHelpers';
 import Google from 'next-auth/providers/google';
+import MicrosoftEntraId from 'next-auth/providers/microsoft-entra-id';
+import GitHub, { GitHubProfile } from 'next-auth/providers/github';
+
+const profile = async (profile: Profile | GitHubProfile) => {
+    const email = profile.email;
+
+    if (!email) {
+        throw new Error("OAuth profile doesn't contain an email");
+    }
+
+    const user = await dbClient.getUserAndRoles(email);
+    if (user) {
+        return {
+            ...user,
+            customId: user.id,
+        };
+    }
+
+    // user does not exist, create a new user
+    const username = generateUsername(email);
+    const createdUser = await dbClient.createUser({ email, username });
+
+    return {
+        ...createdUser,
+        customId: createdUser.id,
+    };
+};
 
 export default {
     pages: {
@@ -36,30 +63,13 @@ export default {
             },
         }),
         Google({
-            profile: async (profile: Profile) => {
-                const email = profile.email;
-
-                if (!email) {
-                    throw new Error("OAuth profile doesn't contain an email");
-                }
-
-                const user = await dbClient.getUserAndRoles(email);
-                if (user) {
-                    return {
-                        ...user,
-                        customId: user.id,
-                    };
-                }
-
-                // user does not exist, create a new user
-                const username = generateUsername(email);
-                const createdUser = await dbClient.createUser({ email, username });
-
-                return {
-                    ...createdUser,
-                    customId: createdUser.id,
-                };
-            },
+            profile,
+        }),
+        MicrosoftEntraId({
+            profile,
+        }),
+        GitHub({
+            profile,
         }),
     ],
     callbacks: {

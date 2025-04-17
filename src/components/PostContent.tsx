@@ -31,7 +31,7 @@ export const PostContent = ({ post }: PostContentProps) => {
     };
 
     return (
-        <div className="flex-grow w-full max-w-screen-md mx-auto">
+        <div className="grow w-full max-w-(--breakpoint-md) mx-auto">
             <div className="prose">
                 <h1>{post.title}</h1>
                 <Markdown

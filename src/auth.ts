@@ -17,9 +17,9 @@ declare module '@auth/core/jwt' {
 
 export const { auth, handlers, signIn, signOut } = NextAuth(() => {
     return {
-        // session: {
-        //     strategy: 'jwt',
-        // },
+        session: {
+            strategy: 'jwt',
+        },
         ...authConfig,
     };
 });

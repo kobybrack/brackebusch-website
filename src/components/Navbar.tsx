@@ -43,7 +43,7 @@ export const Navbar = ({ session }: { session: Session | null }) => {
 
     const navItems = Object.entries(headerPages).map(([text, href], index) => (
         <li key={index}>
-            <Link className="text-lg" href={href} onClick={handleLinkClick}>
+            <Link className="text-lg h-[44px]" href={href} onClick={handleLinkClick}>
                 {text}
             </Link>
         </li>
@@ -76,7 +76,7 @@ export const Navbar = ({ session }: { session: Session | null }) => {
                         <ul
                             style={{ display: displayMenuStyle }}
                             tabIndex={0}
-                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
+                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow-sm"
                         >
                             {navItems}
                         </ul>

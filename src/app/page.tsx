@@ -1,24 +1,11 @@
-import { auth, signOut } from '@/auth';
 import { LoadingSpinnerWithText } from '@/components/LoadingSpinnerWithText';
 import { PostPreviewCard } from '@/components/PostPreviewCard';
 import dbClient from '@/lib/dbClient';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 // Home page
 export default async function Home() {
-    let session;
-    try {
-        session = await auth();
-    } catch (error) {
-        console.log(error);
-    }
-
-    // if (session) {
-    //     redirect('/missions');
-    // }
-
     const renderLatestPosts = async () => {
         const posts = await dbClient.getLatestPosts();
         return (
@@ -30,7 +17,7 @@ export default async function Home() {
         );
     };
     return (
-        <div className="w-full max-w-screen-md mx-auto h-full">
+        <div className="w-full max-w-(--breakpoint-md) mx-auto h-full">
             <div className="prose">
                 <h1>Welcome!</h1>
                 <p>

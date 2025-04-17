@@ -1,7 +1,7 @@
 // About page
 export default function Page() {
     return (
-        <div className="w-full max-w-screen-md mx-auto">
+        <div className="w-full max-w-(--breakpoint-md) mx-auto">
             <div className="prose">
                 <h1>About</h1>
                 <h2 className="mt-0">Koby</h2>

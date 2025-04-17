@@ -15,7 +15,7 @@ export default function Page({ params }: { params: Promise<{ postKey: string }> 
             return (
                 <div className="flex flex-col justify-between h-full">
                     <PostContent post={post} />
-                    <div className="flex flex-col text-sm text-base-content/25 w-full max-w-screen-md mx-auto">
+                    <div className="flex flex-col text-sm text-base-content/25 w-full max-w-(--breakpoint-md) mx-auto">
                         {post.updatedAt !== post.createdAt && <span>Updated:</span>}
                         <span>
                             {new Date(post.createdAt).toLocaleDateString('en-us', {

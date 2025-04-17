@@ -16,11 +16,11 @@ export const PostPreviewCard = ({ post }: PostPreviewCardProps) => {
     });
     return (
         <Link key={post.id} href={`/posts/${post.postKey}`} className="w-full no-underline">
-            <div className="card card-bordered card-md shadow-sm w-full btn-ghost">
+            <div className="card card-border shadow-xs card-lg w-full hover:bg-base-200">
                 <div className="card-body">
-                    <h2 className="card-title m-0">{post.title}</h2>
-                    <p className="text-left m-0">{postPreview + (truncatedPreview ? '...' : '')}</p>
-                    <p className="text-left text-sm text-base-content/25 m-0">{postDateString}</p>
+                    <h2 className="card-title !m-0">{post.title}</h2>
+                    <p className="text-left !m-0">{postPreview + (truncatedPreview ? '...' : '')}</p>
+                    <p className="text-left text-sm text-base-content/25 !m-0">{postDateString}</p>
                 </div>
             </div>
         </Link>

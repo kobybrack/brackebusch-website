@@ -6,7 +6,7 @@ import dbClient from './dbClient';
 import { saltAndHashPassword } from '@/lib/authenticationHelpers';
 import { generateUsername } from './miscHelpers';
 
-export async function login(_prevState: string | undefined, formData: FormData) {
+export async function login(_: string | null, formData: FormData) {
     try {
         const loginMethod = formData.get('loginMethod') as string;
         await signIn(loginMethod, formData);
@@ -21,13 +21,10 @@ export async function login(_prevState: string | undefined, formData: FormData) 
         }
         throw error;
     }
+    return null;
 }
 
-export async function signOutAction() {
-    await signOut({ redirect: false });
-}
-
-export async function createEmailUser(_prevState: string | undefined, formData: FormData) {
+export async function createEmailUser(_: string | undefined, formData: FormData) {
     try {
         const email = formData.get('email') as string;
         const username = generateUsername(email);
@@ -45,12 +42,5 @@ export async function createEmailUser(_prevState: string | undefined, formData: 
             }
         }
         throw error;
-        // if (error instanceof Error && error.message.includes('already exists')) {
-        //     return error.message;
-        // }
-        // console.log(error);
-        // return 'Something went wrong :(';
     }
 }
-
-// export async
