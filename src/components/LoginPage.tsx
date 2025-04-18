@@ -4,19 +4,41 @@ import { useState } from 'react';
 import { login } from '@/lib/actions';
 import Link from 'next/link';
 import { useResettableActionState } from '@/hooks/useResettableActionState';
+import { useReCaptcha } from 'next-recaptcha-v3';
 
 export function LoginPage() {
     const searchParams = useSearchParams();
     const redirectUrl = searchParams.get('redirectUrl') || '/';
+    const initialLoginMethod = searchParams.get('loginMethod') || '';
 
-    const [errorMessage, formAction, isPending, reset] = useResettableActionState(login, null);
-    const [loginMethod, setLoginMethod] = useState('');
-    const inputClasses = `input ${errorMessage ? 'input-error' : ''}`;
+    const { executeRecaptcha } = useReCaptcha();
+
+    const verifyAndLogIn = async (_: string | null, formData: FormData) => {
+        if (formData.get('loginMethod') === 'credentials') {
+            const token = await executeRecaptcha('log_in');
+            const response = await fetch('/api/verify-recaptcha', {
+                method: 'POST',
+                body: JSON.stringify({ token }),
+            });
+
+            if (!response?.ok) {
+                const error = await response.text();
+                return `Recaptcha validation failed: ${error}`;
+            }
+        }
+
+        return await login(_, formData);
+    };
+
+    const [errorMessage, formAction, isPending, reset] = useResettableActionState(verifyAndLogIn, null);
+    const [loginMethod, setLoginMethod] = useState(initialLoginMethod);
+    const inputClasses = `input w-full ${errorMessage ? 'input-error' : ''}`;
     const error = errorMessage && <p className="text-error text-center">{errorMessage}</p>;
+    const borderClasses = `border ${loginMethod === 'credentials' ? 'border border-base-200 rounded-box' : ''}`;
 
     return (
-        <form action={formAction}>
-            <fieldset className="fieldset w-xs mx-auto">
+        <form action={formAction} className="flex flex-col justify-center items-center gap-4">
+            <fieldset className={`fieldset w-sm p-4 ${borderClasses}`}>
                 {loginMethod !== 'credentials' && (
                     <div className="flex flex-col gap-4">
                         <button
@@ -114,6 +136,7 @@ export function LoginPage() {
                 )}
                 {loginMethod === 'credentials' && (
                     <>
+                        <label className="fieldset-legend">Log in</label>
                         <label className="fieldset-label justify-between">Email {error}</label>
                         <input className={inputClasses} id="email" name="email" autoComplete="off" onChange={reset} />
 
@@ -126,42 +149,43 @@ export function LoginPage() {
                             onChange={reset}
                         />
 
-                        <button type="submit" className="btn mt-4" disabled={isPending}>
-                            Log in
-                        </button>
+                        <div className="flex flex-col mt-2 gap-2 justify-center">
+                            <button type="submit" className="btn" disabled={isPending}>
+                                Log in
+                            </button>
 
-                        <p className="mt-2 text-center">
-                            {'No account? '}
-                            <Link href="/signup" className="link">
-                                Sign up
-                            </Link>
-                        </p>
+                            <span className="text-center mt-2">
+                                {'No account? '}
+                                <Link href="/signup" className="link">
+                                    Sign up
+                                </Link>
+                            </span>
+
+                            <div
+                                className="flex items-center justify-center gap-2"
+                                onClick={() => {
+                                    reset();
+                                    setLoginMethod('');
+                                }}
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="size-6"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18"
+                                    />
+                                </svg>
+                                <span className="link link-hover">Use a different log in method</span>
+                            </div>
+                        </div>
                     </>
-                )}
-                {loginMethod === 'credentials' && (
-                    <button
-                        className="btn btn-ghost mt-2"
-                        onClick={() => {
-                            reset();
-                            setLoginMethod('');
-                        }}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="size-6"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18"
-                            />
-                        </svg>
-                        Use a different log in method
-                    </button>
                 )}
                 <input type="hidden" name="redirectTo" value={redirectUrl} />
                 <input type="hidden" name="loginMethod" value={loginMethod} />

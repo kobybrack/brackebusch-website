@@ -203,7 +203,7 @@ class DbClient {
         };
     }
 
-    async getUser(email: string, getPassword?: string): Promise<User | undefined> {
+    async getUser(email: string, getPassword?: boolean): Promise<User | undefined> {
         const query = `
             SELECT 
                 id

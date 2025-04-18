@@ -34,7 +34,6 @@
     --size-field: 0.275rem;
     --border: 1px;
     --depth: 0;
-    --noise: 1;
 }
 
 @layer base {
