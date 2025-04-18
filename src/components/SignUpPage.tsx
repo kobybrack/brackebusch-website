@@ -4,6 +4,7 @@ import { createEmailUser } from '@/lib/actions';
 import { useReCaptcha } from 'next-recaptcha-v3';
 import { useResettableActionState } from '@/hooks/useResettableActionState';
 import Link from 'next/link';
+import RecaptchaDisclaimer from './RecaptchaDisclaimer';
 
 export default function SignUpPage() {
     const { executeRecaptcha } = useReCaptcha();
@@ -28,7 +29,7 @@ export default function SignUpPage() {
     const error = errorMessage && <p className="text-error text-center">{errorMessage}</p>;
 
     return (
-        <form action={formAction} className="flex flex-col justify-center items-center gap-4">
+        <form action={formAction} className="h-full flex flex-col justify-between items-center gap-4">
             <fieldset className="fieldset w-sm border border-base-200 p-4 rounded-box">
                 <label className="fieldset-legend">Sign up</label>
                 <label className="fieldset-label justify-between">Email {error}</label>
@@ -55,11 +56,11 @@ export default function SignUpPage() {
                             required
                             onChange={reset}
                             pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                            title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
+                            title="Password must be more than 8 characters, including number, lowercase letter, uppercase letter"
                         />
                     </label>
                     <p className="validator-hint hidden -mb-2">
-                        Must be more than 8 characters, including
+                        Password must be more than 8 characters, including
                         <br />
                         At least one number
                         <br />
@@ -82,6 +83,9 @@ export default function SignUpPage() {
 
                 <input type="hidden" name="redirectTo" value={'/'} />
             </fieldset>
+            <div className="text-xs">
+                <RecaptchaDisclaimer />
+            </div>
         </form>
     );
 }

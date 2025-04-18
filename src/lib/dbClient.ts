@@ -80,16 +80,14 @@ class DbClient {
         });
     }
 
-    async getLatestPosts(): Promise<Post[]> {
+    async getLatestPosts(hasMissionsAccess = false): Promise<Post[]> {
         const query = `
             SELECT *
             FROM posts
+            ${!hasMissionsAccess ? 'WHERE missionary_post = false' : ''}
             ORDER BY id DESC
             LIMIT 3`;
         const rows = await this.client(query);
-        if (!rows.length) {
-            throw new Error('no posts in database!');
-        }
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,

@@ -5,6 +5,7 @@ import { login } from '@/lib/actions';
 import Link from 'next/link';
 import { useResettableActionState } from '@/hooks/useResettableActionState';
 import { useReCaptcha } from 'next-recaptcha-v3';
+import RecaptchaDisclaimer from './RecaptchaDisclaimer';
 
 export function LoginPage() {
     const searchParams = useSearchParams();
@@ -37,7 +38,7 @@ export function LoginPage() {
     const borderClasses = `border ${loginMethod === 'credentials' ? 'border border-base-200 rounded-box' : ''}`;
 
     return (
-        <form action={formAction} className="flex flex-col justify-center items-center gap-4">
+        <form action={formAction} className="h-full flex flex-col justify-between items-center gap-4">
             <fieldset className={`fieldset w-sm p-4 ${borderClasses}`}>
                 {loginMethod !== 'credentials' && (
                     <div className="flex flex-col gap-4">
@@ -150,7 +151,7 @@ export function LoginPage() {
                         />
 
                         <div className="flex flex-col mt-2 gap-2 justify-center">
-                            <button type="submit" className="btn" disabled={isPending}>
+                            <button type="submit" className="btn w-full" disabled={isPending}>
                                 Log in
                             </button>
 
@@ -190,6 +191,9 @@ export function LoginPage() {
                 <input type="hidden" name="redirectTo" value={redirectUrl} />
                 <input type="hidden" name="loginMethod" value={loginMethod} />
             </fieldset>
+            <div className="text-xs">
+                <RecaptchaDisclaimer />
+            </div>
         </form>
     );
 }

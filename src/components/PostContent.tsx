@@ -3,7 +3,7 @@
 import Markdown from 'react-markdown';
 import { Post } from '@/lib/types';
 import Image from 'next/image';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Zoom, Thumbnails } from 'yet-another-react-lightbox/plugins';
 import Lightbox, { SlideImage } from 'yet-another-react-lightbox';
 

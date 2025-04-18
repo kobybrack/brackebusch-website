@@ -9,7 +9,7 @@ interface PostNavigationButtonsProps {
 export const PostNavigationButtons = ({ previousPost, nextPost }: PostNavigationButtonsProps) => {
     const renderButton = (post: Post | undefined, label: string) => {
         const button = (
-            <div className="tooltip hover:after:delay-500 hover:before:delay-500" data-tip={post?.title}>
+            <div className="tooltip" data-tip={post?.title}>
                 <button className={`btn w-[90px] ${post ? '' : 'btn-disabled'}`}>{label}</button>
             </div>
         );

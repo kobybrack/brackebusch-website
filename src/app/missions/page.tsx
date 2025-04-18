@@ -4,7 +4,6 @@ import { PostsList } from '@/components/PostsList';
 import dbClient from '@/lib/dbClient';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-// import { nextAuthSignOut } from 'next-auth/react';
 
 export default async function Page() {
     const session = await auth();
@@ -16,7 +15,13 @@ export default async function Page() {
     const hasMissionAccess = session.user?.roles?.includes('missions');
 
     if (!hasMissionAccess) {
-        return <>you don't have access</>;
+        return (
+            <div className="flex flex-col justify-center items-center">
+                You don't have access to this page.
+                <br />
+                If you think this is a mistake, please contact Koby.
+            </div>
+        );
     }
 
     const renderPostsList = async () => {

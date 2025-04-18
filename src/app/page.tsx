@@ -3,11 +3,14 @@ import { PostPreviewCard } from '@/components/PostPreviewCard';
 import dbClient from '@/lib/dbClient';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { auth } from '@/auth';
 
 // Home page
-export default async function Home() {
+export default function Home() {
     const renderLatestPosts = async () => {
-        const posts = await dbClient.getLatestPosts();
+        const session = await auth();
+        const hasMissionsAccess = session?.user?.roles?.includes('missions');
+        const posts = await dbClient.getLatestPosts(hasMissionsAccess);
         return (
             <div className="flex flex-col gap-6">
                 {posts.map((post) => (

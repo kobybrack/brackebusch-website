@@ -1,5 +1,5 @@
 'use client';
-import { Session } from 'next-auth';
+
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -17,11 +17,10 @@ const editorHeaderPages = {
     Editor: '/editor',
 };
 
-export const Navbar = ({ session }: { session: Session | null }) => {
+export const Navbar = ({ loggedIn, roles }: { loggedIn: boolean; roles: string[] }) => {
     const [menuDisplay, setMenuDisplay] = useState(true);
     const [displayMenuStyle, setDisplayMenuStyle] = useState('');
 
-    const roles = session?.user?.roles || [];
     const headerPages = {
         ...baseHeaderPages,
         ...(roles.includes('missions') ? missionHeaderPages : {}),
@@ -49,8 +48,8 @@ export const Navbar = ({ session }: { session: Session | null }) => {
         </li>
     ));
 
-    const authLinkHref = session?.user ? '/logout' : '/login';
-    const authLinkString = session?.user ? 'Log out' : 'Log in';
+    const authLinkHref = loggedIn ? '/logout' : '/login';
+    const authLinkString = loggedIn ? 'Log out' : 'Log in';
 
     return (
         <div className="w-full z-50 flex justify-center">
