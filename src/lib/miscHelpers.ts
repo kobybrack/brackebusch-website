@@ -1,3 +1,5 @@
+import { ALL_ROLES } from '@/lib/constants';
+
 export function generateUsername(email: string) {
     const namePart = email.split('@')[0];
     const randomNumber = Math.floor(1000 + Math.random() * 9000);
@@ -6,9 +8,8 @@ export function generateUsername(email: string) {
 }
 
 export function getEffectiveRoles(userRoles: string[]) {
-    const allRoles = ['admin', 'missions', 'editor'];
     if (userRoles.includes('admin')) {
-        return allRoles;
+        return ALL_ROLES;
     }
     return userRoles;
 }
