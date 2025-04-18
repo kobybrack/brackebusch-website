@@ -19,7 +19,7 @@ export async function login(_: string | null, formData: FormData) {
     return null;
 }
 
-export async function createEmailUser(_: string | undefined, formData: FormData) {
+export async function createEmailUser(_: string | null, formData: FormData) {
     try {
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -37,4 +37,6 @@ export async function createEmailUser(_: string | undefined, formData: FormData)
     } catch (error) {
         handleAuthError(error);
     }
+    // for type safety
+    return null;
 }

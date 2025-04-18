@@ -9,7 +9,7 @@ import RecaptchaDisclaimer from './RecaptchaDisclaimer';
 export default function SignUpPage() {
     const { executeRecaptcha } = useReCaptcha();
 
-    const verifyAndCreateUser = async (_: string | undefined, formData: FormData) => {
+    const verifyAndCreateUser = async (_: string | null, formData: FormData) => {
         const token = await executeRecaptcha('create_email_account');
         const response = await fetch('/api/verify-recaptcha', {
             method: 'POST',
@@ -24,7 +24,7 @@ export default function SignUpPage() {
         return await createEmailUser(_, formData);
     };
 
-    const [errorMessage, formAction, isPending, reset] = useResettableActionState(verifyAndCreateUser, undefined);
+    const [errorMessage, formAction, isPending, reset] = useResettableActionState(verifyAndCreateUser, null);
     const inputClasses = `input ${errorMessage ? 'input-error' : ''}`;
     const error = errorMessage && <p className="text-error text-center">{errorMessage}</p>;
 
