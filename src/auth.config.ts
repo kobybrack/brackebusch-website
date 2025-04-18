@@ -51,7 +51,6 @@ export default {
                 if (parseResult.success) {
                     const { email, password } = parseResult.data;
 
-                    // logic to verify if the user exists
                     const user = await dbClient.getUserAndRoles(email, true);
                     if (!user || !(await checkPassword(password, user.password || ''))) {
                         return null;

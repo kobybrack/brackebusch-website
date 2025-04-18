@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import { AuthError } from 'next-auth';
 
 const saltRounds = 10;
 export async function saltAndHashPassword(password: string) {
@@ -19,4 +20,17 @@ export async function checkPassword(plainTextPassword: string, hashedPassword: s
         console.error('Error checking password:', err);
         throw err;
     }
+}
+
+export function handleAuthError(error: unknown) {
+    if (error instanceof AuthError) {
+        switch (error.type) {
+            case 'CredentialsSignin':
+                return 'Invalid username or password';
+            default:
+                return 'Something went wrong :(';
+        }
+    }
+
+    throw error;
 }

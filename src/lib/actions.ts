@@ -3,25 +3,19 @@
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 import dbClient from './dbClient';
-import { saltAndHashPassword } from '@/lib/authenticationHelpers';
+import { handleAuthError, saltAndHashPassword } from '@/lib/authenticationHelpers';
 import { generateUsername } from './miscHelpers';
 import { signInSchema } from '@/lib/types';
+import { ZodError } from 'zod';
 
 export async function login(_: string | null, formData: FormData) {
     try {
         const loginMethod = formData.get('loginMethod') as string;
         await signIn(loginMethod, formData);
     } catch (error) {
-        if (error instanceof AuthError) {
-            switch (error.type) {
-                case 'CredentialsSignin':
-                    return 'Invalid username or password';
-                default:
-                    return 'Something went wrong :(';
-            }
-        }
-        throw error;
+        handleAuthError(error);
     }
+    // for type safety
     return null;
 }
 
@@ -41,18 +35,6 @@ export async function createEmailUser(_: string | undefined, formData: FormData)
         await dbClient.createUser({ email, password: saltedHashedPassword, username });
         await signIn('credentials', formData);
     } catch (error) {
-        if (error instanceof AuthError) {
-            switch (error.type) {
-                case 'CredentialsSignin':
-                    return 'Invalid username or password';
-                default:
-                    return 'Something went wrong :(';
-            }
-        }
-        if (error instanceof Error && error.message.includes('invalid format')) {
-            return 'Invalid username or password';
-        }
-
-        throw error;
+        handleAuthError(error);
     }
 }
