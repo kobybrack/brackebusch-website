@@ -6,7 +6,7 @@ interface PostNavigationButtonsProps {
     nextPost: Post | undefined;
 }
 
-export const PostNavigationButtons = ({ previousPost, nextPost }: PostNavigationButtonsProps) => {
+export default function PostNavigationButtons({ previousPost, nextPost }: PostNavigationButtonsProps) {
     const renderButton = (post: Post | undefined, label: string) => {
         const button = (
             <div className="tooltip" data-tip={post?.title}>
@@ -25,4 +25,4 @@ export const PostNavigationButtons = ({ previousPost, nextPost }: PostNavigation
             {nextButton}
         </div>
     );
-};
+}

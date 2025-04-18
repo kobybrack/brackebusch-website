@@ -1,5 +1,4 @@
-// About page
-export default function Page() {
+export default function About() {
     return (
         <div className="w-full max-w-(--breakpoint-md) mx-auto">
             <div className="prose">

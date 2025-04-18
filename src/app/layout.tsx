@@ -3,7 +3,7 @@ import 'yet-another-react-lightbox/styles.css';
 import 'yet-another-react-lightbox/plugins/thumbnails.css';
 import type { Metadata } from 'next';
 import { Noto_Sans } from 'next/font/google';
-import { ServerNavbarWrapper } from '@/components/ServerNavbarWrapper';
+import ServerNavbarWrapper from '@/components/ServerNavbarWrapper';
 import { ReCaptchaProvider } from 'next-recaptcha-v3';
 
 const notoSans = Noto_Sans({

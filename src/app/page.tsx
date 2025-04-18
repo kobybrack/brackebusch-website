@@ -1,11 +1,10 @@
-import { LoadingSpinnerWithText } from '@/components/LoadingSpinnerWithText';
-import { PostPreviewCard } from '@/components/PostPreviewCard';
+import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
+import PostPreviewCard from '@/components/PostPreviewCard';
 import dbClient from '@/lib/dbClient';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { auth } from '@/auth';
 
-// Home page
 export default function Home() {
     const renderLatestPosts = async () => {
         const session = await auth();

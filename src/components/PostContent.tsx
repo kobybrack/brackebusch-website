@@ -11,7 +11,7 @@ type PostContentProps = {
     post: Post;
 };
 
-export const PostContent = ({ post }: PostContentProps) => {
+export default function PostContent({ post }: PostContentProps) {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [slides, setSlides] = useState<SlideImage[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -85,4 +85,4 @@ export const PostContent = ({ post }: PostContentProps) => {
             </div>
         </div>
     );
-};
+}

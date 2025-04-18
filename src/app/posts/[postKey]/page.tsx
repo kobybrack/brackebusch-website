@@ -1,11 +1,10 @@
-import { LoadingSpinnerWithText } from '@/components/LoadingSpinnerWithText';
-import { PostContent } from '@/components/PostContent';
-import { PostNavigationButtons } from '@/components/PostNavigationButtons';
+import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
+import PostContent from '@/components/PostContent';
+import PostNavigationButtons from '@/components/PostNavigationButtons';
 import dbClient from '@/lib/dbClient';
 import { Suspense } from 'react';
 
-// Dynamic posts page
-export default function Page({ params }: { params: Promise<{ postKey: string }> }) {
+export default function Post({ params }: { params: Promise<{ postKey: string }> }) {
     const loadingText = 'Loading post...';
     const renderPost = async () => {
         const postKey = (await params).postKey;

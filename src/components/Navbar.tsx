@@ -17,7 +17,7 @@ const editorHeaderPages = {
     Editor: '/editor',
 };
 
-export const Navbar = ({ loggedIn, roles }: { loggedIn: boolean; roles: string[] }) => {
+export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: string[] }) {
     const [menuDisplay, setMenuDisplay] = useState(true);
     const [displayMenuStyle, setDisplayMenuStyle] = useState('');
 
@@ -94,4 +94,4 @@ export const Navbar = ({ loggedIn, roles }: { loggedIn: boolean; roles: string[]
             </div>
         </div>
     );
-};
+}

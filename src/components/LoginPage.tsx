@@ -1,4 +1,5 @@
 'use client';
+
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { login } from '@/lib/actions';
@@ -7,7 +8,7 @@ import { useResettableActionState } from '@/hooks/useResettableActionState';
 import { useReCaptcha } from 'next-recaptcha-v3';
 import RecaptchaDisclaimer from './RecaptchaDisclaimer';
 
-export function LoginPage() {
+export default function LoginPage() {
     const searchParams = useSearchParams();
     const redirectUrl = searchParams.get('redirectUrl') || '/';
     const initialLoginMethod = searchParams.get('loginMethod') || '';

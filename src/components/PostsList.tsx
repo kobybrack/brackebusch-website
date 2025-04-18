@@ -2,13 +2,13 @@
 
 import { Post } from '@/lib/types';
 import { useState } from 'react';
-import { PostPreviewCard } from './PostPreviewCard';
+import PostPreviewCard from '@/components/PostPreviewCard';
 
 interface PostsListProps {
     posts: Post[];
 }
 
-export const PostsList = ({ posts }: PostsListProps) => {
+export default function PostsList({ posts }: PostsListProps) {
     const [searchText, setSearchText] = useState('');
 
     return (
@@ -31,4 +31,4 @@ export const PostsList = ({ posts }: PostsListProps) => {
                 ))}
         </div>
     );
-};
+}

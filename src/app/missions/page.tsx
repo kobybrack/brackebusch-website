@@ -1,11 +1,11 @@
 import { auth, signOut } from '@/auth';
-import { LoadingSpinnerWithText } from '@/components/LoadingSpinnerWithText';
-import { PostsList } from '@/components/PostsList';
+import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
+import PostsList from '@/components/PostsList';
 import dbClient from '@/lib/dbClient';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-export default async function Page() {
+export default async function Missions() {
     const session = await auth();
 
     if (!session?.user) {

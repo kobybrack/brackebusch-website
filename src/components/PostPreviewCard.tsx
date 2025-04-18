@@ -1,7 +1,7 @@
 import { Post } from '@/lib/types';
 import Link from 'next/link';
 
-export const PostPreviewCard = ({ post }: { post: Post }) => {
+export default function PostPreviewCard({ post }: { post: Post }) {
     let postPreview = post.content.replace(/(^#{1,6} |\*\*|__|\*|_)/g, '').trim();
     const truncatedPreview = postPreview.length > 75;
     postPreview = postPreview.substring(0, 100).trim();
@@ -21,4 +21,4 @@ export const PostPreviewCard = ({ post }: { post: Post }) => {
             </div>
         </Link>
     );
-};
+}
