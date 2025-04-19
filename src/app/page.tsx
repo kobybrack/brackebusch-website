@@ -1,13 +1,15 @@
-import { LoadingSpinnerWithText } from '@/components/LoadingSpinnerWithText';
-import { PostPreviewCard } from '@/components/PostPreviewCard';
+import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
+import PostPreviewCard from '@/components/PostPreviewCard';
 import dbClient from '@/lib/dbClient';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { auth } from '@/auth';
 
-// Home page
 export default function Home() {
     const renderLatestPosts = async () => {
-        const posts = await dbClient.getLatestPosts();
+        const session = await auth();
+        const hasMissionsAccess = session?.user?.roles?.includes('missions');
+        const posts = await dbClient.getLatestPosts(hasMissionsAccess);
         return (
             <div className="flex flex-col gap-6">
                 {posts.map((post) => (
@@ -17,7 +19,7 @@ export default function Home() {
         );
     };
     return (
-        <div className="w-full max-w-screen-md mx-auto h-full">
+        <div className="w-full max-w-(--breakpoint-md) mx-auto h-full">
             <div className="prose">
                 <h1>Welcome!</h1>
                 <p>

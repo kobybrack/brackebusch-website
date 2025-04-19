@@ -1,5 +1,5 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
-import { Post } from './types';
+import { Post, User } from './types';
 
 class DbClient {
     private client: NeonQueryFunction<false, false>;
@@ -58,8 +58,12 @@ class DbClient {
         return posts;
     }
 
-    async getPosts(): Promise<Post[]> {
-        const query = 'SELECT * FROM posts ORDER BY created_at DESC';
+    async getPosts(missionPosts = false): Promise<Post[]> {
+        const query = `
+            SELECT * 
+            FROM posts 
+            WHERE missionary_post = ${missionPosts} 
+            ORDER BY created_at DESC`;
         const rows = await this.client(query);
         return rows.map((row) => {
             const post: Post = {
@@ -76,16 +80,14 @@ class DbClient {
         });
     }
 
-    async getLatestPosts(): Promise<Post[]> {
+    async getLatestPosts(hasMissionsAccess = false): Promise<Post[]> {
         const query = `
             SELECT *
             FROM posts
+            ${!hasMissionsAccess ? 'WHERE missionary_post = false' : ''}
             ORDER BY id DESC
             LIMIT 3`;
         const rows = await this.client(query);
-        if (!rows.length) {
-            throw new Error('no posts in database!');
-        }
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,
@@ -162,6 +164,117 @@ class DbClient {
             postKey: row.post_key,
         };
         return post;
+    }
+
+    async getUserAndRoles(email: string, getPassword?: boolean): Promise<User | undefined> {
+        const query = `
+            SELECT 
+                u.id AS user_id,
+                u.email,    
+                ${getPassword ? 'u.password,' : ''}
+                u.username,
+                u.first_name,
+                u.last_name,
+                r.role_name
+            FROM users u
+            LEFT JOIN user_role_mappings urm ON u.id = urm.user_id
+            LEFT JOIN roles r ON urm.role_id = r.id
+            WHERE u.email = $1;
+        `;
+
+        const rows = await this.client(query, [email]);
+
+        if (!rows.length) {
+            return undefined;
+        }
+
+        // Extract user data from the first row
+        const row = rows[0];
+        return {
+            id: row.user_id,
+            email: row.email,
+            password: row.password,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            roles: rows.map((row) => row.role_name).filter((role) => role !== null),
+        };
+    }
+
+    async getUser(email: string, getPassword?: boolean): Promise<User | undefined> {
+        const query = `
+            SELECT 
+                id
+                email,    
+                ${getPassword ? 'password,' : ''}
+                username,
+                first_name,
+                last_name
+            FROM users
+            WHERE email = $1`;
+        const rows = await this.client(query, [email]);
+        if (!rows.length) {
+            return undefined;
+        }
+        const row = rows[0];
+        const user: User = {
+            id: row.id,
+            email: row.email,
+            password: row.password,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+        };
+        return user;
+    }
+
+    async createUser(createUserBody: { email: string; password?: string; username?: string }): Promise<User> {
+        const { email, password, username } = createUserBody;
+        const existingUserQuery = `
+            SELECT id, email
+            FROM users
+            WHERE email = $1;
+        `;
+
+        const existingUser = await this.client(existingUserQuery, [email]);
+
+        if (existingUser.length > 0) {
+            throw new Error('A user already exists with this email');
+        }
+
+        const query = `
+            INSERT INTO users (email, password, username)
+            VALUES ($1, $2, $3)
+            RETURNING *;
+        `;
+
+        // Pass the parameters in the same order as the placeholders
+        const values = [email, password, username];
+
+        // Execute the query using your database client
+        const rows = await this.client(query, values);
+        const row = rows[0];
+        const user: User = {
+            id: row.id,
+            email: row.email,
+            password: row.password,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+        };
+        return user;
+    }
+
+    async getRoles(userId: string): Promise<string[]> {
+        const query = `
+            SELECT roles.role_name
+            FROM roles
+            INNER JOIN user_role_mappings ON roles.id = user_role_mappings.role_id
+            WHERE user_role_mappings.user_id = $1;
+        `;
+
+        const roles = (await this.client(query, [userId])).map((row) => row.role_name);
+        return roles;
     }
 }
 

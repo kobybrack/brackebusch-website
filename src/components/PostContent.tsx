@@ -3,7 +3,7 @@
 import Markdown from 'react-markdown';
 import { Post } from '@/lib/types';
 import Image from 'next/image';
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Zoom, Thumbnails } from 'yet-another-react-lightbox/plugins';
 import Lightbox, { SlideImage } from 'yet-another-react-lightbox';
 
@@ -11,7 +11,7 @@ type PostContentProps = {
     post: Post;
 };
 
-export const PostContent = ({ post }: PostContentProps) => {
+export default function PostContent({ post }: PostContentProps) {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [slides, setSlides] = useState<SlideImage[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -31,7 +31,7 @@ export const PostContent = ({ post }: PostContentProps) => {
     };
 
     return (
-        <div className="flex-grow w-full max-w-screen-md mx-auto">
+        <div className="grow w-full max-w-(--breakpoint-md) mx-auto">
             <div className="prose">
                 <h1>{post.title}</h1>
                 <Markdown
@@ -85,4 +85,4 @@ export const PostContent = ({ post }: PostContentProps) => {
             </div>
         </div>
     );
-};
+}
