@@ -1,24 +1,39 @@
 'use client';
+
 import Link from 'next/link';
 import { useState } from 'react';
 
-const headerPages = {
+const baseHeaderPages = {
     Home: '/',
     About: '/about',
     Posts: '/posts',
     Editor: '/editor',
 };
 
-export const Navbar = () => {
-    const [menuDisplay, setmenuDisplay] = useState(true);
-    const [displayMenuStyle, setdisplayMenuStyle] = useState('');
+const missionHeaderPages = {
+    Missions: '/missions',
+};
+
+const editorHeaderPages = {
+    Editor: '/editor',
+};
+
+export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: string[] }) {
+    const [menuDisplay, setMenuDisplay] = useState(true);
+    const [displayMenuStyle, setDisplayMenuStyle] = useState('');
+
+    const headerPages = {
+        ...baseHeaderPages,
+        ...(roles.includes('missions') ? missionHeaderPages : {}),
+        ...(roles.includes('editor') ? editorHeaderPages : {}),
+    };
 
     const showMenu = () => {
-        setmenuDisplay(!menuDisplay);
+        setMenuDisplay(!menuDisplay);
         if (menuDisplay) {
-            setdisplayMenuStyle('');
+            setDisplayMenuStyle('');
         } else {
-            setdisplayMenuStyle('none');
+            setDisplayMenuStyle('none');
         }
     };
 
@@ -28,23 +43,21 @@ export const Navbar = () => {
 
     const navItems = Object.entries(headerPages).map(([text, href], index) => (
         <li key={index}>
-            <Link className="text-lg" href={href} onClick={handleLinkClick}>
+            <Link className="text-lg h-[44px]" href={href} onClick={handleLinkClick}>
                 {text}
             </Link>
         </li>
     ));
+
+    const authLinkHref = loggedIn ? '/logout' : '/login';
+    const authLinkString = loggedIn ? 'Log out' : 'Log in';
 
     return (
         <div className="w-full z-50 flex justify-center">
             <div className="navbar">
                 <div className="navbar-start">
                     <div className="dropdown" onClick={showMenu}>
-                        <div
-                            tabIndex={0}
-                            role="button"
-                            className="btn btn-ghost sm:hidden"
-                            style={{ marginLeft: '.5rem' }}
-                        >
+                        <div tabIndex={0} role="button" className="btn btn-ghost sm:hidden ml-2">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-5 w-5"
@@ -63,7 +76,7 @@ export const Navbar = () => {
                         <ul
                             style={{ display: displayMenuStyle }}
                             tabIndex={0}
-                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
+                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow-sm"
                         >
                             {navItems}
                         </ul>
@@ -72,8 +85,14 @@ export const Navbar = () => {
                 <div className="navbar-center">
                     <ul className="hidden sm:flex gap-6 list-none m-0 p-0 menu menu-horizontal">{navItems}</ul>
                 </div>
-                <div className="navbar-end">{/* TODO add account */}</div>
+                <div className="navbar-end">
+                    <div className="mr-2">
+                        <Link href={authLinkHref}>
+                            <button className="btn btn-ghost">{authLinkString}</button>
+                        </Link>
+                    </div>
+                </div>
             </div>
         </div>
     );
-};
+}

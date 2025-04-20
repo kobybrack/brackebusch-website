@@ -1,10 +1,9 @@
-import { LoadingSpinnerWithText } from '@/components/LoadingSpinnerWithText';
-import { PostsList } from '@/components/PostsList';
+import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
+import PostsList from '@/components/PostsList';
 import dbClient from '@/lib/dbClient';
 import { Suspense } from 'react';
 
-// Posts list page
-export default function Page() {
+export default function Posts() {
     const renderPostsList = async () => {
         const posts = await dbClient.getPosts();
         return <PostsList posts={posts} />;
