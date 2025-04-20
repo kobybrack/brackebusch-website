@@ -106,10 +106,7 @@ export const PostEditor = ({ text, setText, title, setTitle, setIsMissionaryPost
 
     return (
         <>
-            <div
-                role="tablist"
-                className="tabs tabs-bordered tabs-lg grid-rows-[auto,1fr] w-full h-full flex-grow pb-4 overflow-hidden"
-            >
+            <div role="tablist" className="tabs tabs-border tabs-lg grid-rows-[auto,1fr] w-full h-full grow pb-4">
                 <input
                     type="radio"
                     name="editor_tabs"
@@ -123,31 +120,28 @@ export const PostEditor = ({ text, setText, title, setTitle, setIsMissionaryPost
                     }}
                     defaultChecked
                 />
-                <div role="tabpanel" className="tab-content h-full overflow-hidden p-1">
-                    <div className="flex flex-col gap-4 h-full -m1">
-                        <input
-                            className="input input-bordered"
-                            placeholder="Title"
-                            autoComplete="off"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                        />
-                        <textarea
-                            title="content"
-                            className="textarea text-base leading-snug border-base-300 !rounded-box p-6 h-full"
-                            ref={textAreaRef}
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                        />
-                    </div>
+                {/* <div role="tabpanel" className=" h-full p-1"> */}
+                <div role="tabpanel" className="tab-content flex flex-col gap-4 h-full -m1">
+                    <input
+                        className="input w-full"
+                        placeholder="Title"
+                        autoComplete="off"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                    />
+                    <textarea
+                        title="content"
+                        className="textarea text-base leading-snug border-base-300  p-6 w-full"
+                        ref={textAreaRef}
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                    />
                 </div>
+                {/* </div> */}
 
                 <input type="radio" name="editor_tabs" role="tab" className="tab mb-4" aria-label="Preview" />
-                <div
-                    role="tabpanel"
-                    className="tab-content border-base-300 rounded-box p-6 h-full prose overflow-y-auto"
-                >
+                <div className="tab-content border-base-300 rounded-box p-6 h-full prose">
                     <h1>{title}</h1>
                     <Markdown children={text} />
                 </div>

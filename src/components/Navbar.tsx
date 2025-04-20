@@ -7,7 +7,6 @@ const baseHeaderPages = {
     Home: '/',
     About: '/about',
     Posts: '/posts',
-    Editor: '/editor',
 };
 
 const missionHeaderPages = {
