@@ -26,7 +26,7 @@ export interface Comment {
     updatedAt: string;
     content: string;
     userData: {
-        id: string;
+        userId: string;
         firstName: string;
         lastName: string;
         username: string;

@@ -106,9 +106,6 @@ export default function Comments({
                         )}
                     </div>
                 </div>
-
-                <input name="postId" type="hidden" value={postId} />
-                <input name="userId" type="hidden" value={user?.id} />
             </form>
             {isLoading ? (
                 <LoadingSpinnerWithText loadingText={'Loading comments...'} />
@@ -131,7 +128,7 @@ export default function Comments({
                                         {timeAgo(comment.updatedAt)}
                                     </span>
                                 </div>
-                                {(user?.id === comment.userData.id || user?.roles?.includes('admin')) && (
+                                {(user?.id === comment.userData.userId || user?.roles?.includes('admin')) && (
                                     <div className="dropdown dropdown-left">
                                         <div role="button" className="btn btn-ghost btn-square btn-sm" tabIndex={0}>
                                             <svg

@@ -7,15 +7,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pos
     return Response.json({ comments });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request, { params }: { params: Promise<{ postId: string }> }) {
     const session = await auth();
     if (!session?.user) {
         return Response.json('only users with accounts can write comments', { status: 403 });
     }
+    const userId = session.user.id as string;
+    const { postId } = await params;
     const formData = await request.formData();
-    const postId = formData.get('postId') as string;
     const content = formData.get('content') as string;
-    const userId = formData.get('userId') as string;
 
     if (!postId || !content || !userId) {
         return Response.json({ error: 'Missing required fields' }, { status: 400 });

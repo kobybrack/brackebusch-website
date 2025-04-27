@@ -1,4 +1,4 @@
-import './globals.css';
+import '@/app/globals.css';
 import 'yet-another-react-lightbox/styles.css';
 import 'yet-another-react-lightbox/plugins/thumbnails.css';
 import type { Metadata } from 'next';

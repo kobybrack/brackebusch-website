@@ -1,9 +1,9 @@
 'use server';
 
 import { auth, signIn } from '@/auth';
-import dbClient from './dbClient';
+import dbClient from '@/lib/dbClient';
 import { handleAuthError, saltAndHashPassword } from '@/lib/authenticationHelpers';
-import { generateUsername } from './miscHelpers';
+import { generateUsername } from '@/lib/miscHelpers';
 import { signInSchema } from '@/lib/types';
 
 export async function login(_: string | null, formData: FormData) {
@@ -44,5 +44,4 @@ export async function submitComment(formData: FormData) {
     const content = formData.get('content') as string;
     const postId = formData.get('postId') as string;
     await dbClient.insertComment(postId, session?.user?.id as string, content);
-    // const queryClient = new QueryClient();
 }

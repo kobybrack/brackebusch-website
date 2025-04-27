@@ -26,10 +26,11 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
                 </svg>
                 <span>{'Oh shoot, something went wrong :('}</span>
             </div>
-            <span>
-                Koby would really appreciate if you let him know what you were doing when this happened so he can fix
-                it!
-            </span>
+            <p>
+                I would really appreciate if you let me know what you were doing when this happened so I can fix it!
+                Thank you!
+                <br />- Koby
+            </p>
             <div className="flex gap-4">
                 <button className="btn" onClick={() => redirect('/')}>
                     Go Home

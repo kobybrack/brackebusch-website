@@ -203,7 +203,7 @@ class DbClient {
             createdAt: row.created_at,
             updatedAt: row.updated_at,
             userData: {
-                id: row.user_id,
+                userId: row.user_id,
                 firstName: row.first_name,
                 lastName: row.last_name,
                 username: row.username,
@@ -211,7 +211,7 @@ class DbClient {
         }));
     }
 
-    async insertComment(postId: string, userId: string, content: string) {
+    async insertComment(postId: string, userId: string, content: string): Promise<Comment> {
         const query = `
         WITH inserted_comment AS (
             INSERT INTO comments (post_id, user_id, content)
@@ -244,7 +244,7 @@ class DbClient {
             createdAt: row.created_at,
             updatedAt: row.updated_at,
             userData: {
-                id: row.user_id,
+                userId: row.user_id,
                 firstName: row.first_name,
                 lastName: row.last_name,
                 username: row.username,
