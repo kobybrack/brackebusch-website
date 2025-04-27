@@ -1,6 +1,6 @@
 import { startTransition, useActionState } from 'react';
 
-export function useResettableActionState<State, Payload>(
+export default function useResettableActionState<State, Payload>(
     action: (state: Awaited<State>, payload: Payload) => State | Promise<State>,
     initialState: Awaited<State>,
     permalink?: string,

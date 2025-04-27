@@ -1,6 +1,6 @@
 import { object, string } from 'zod';
 export interface Post {
-    id: number;
+    id: string;
     title: string;
     content: string;
     createdAt: string;
@@ -8,8 +8,8 @@ export interface Post {
     contentType: string;
     rawText: string;
     postKey: string;
+    missionPost: string;
 }
-
 export interface User {
     id: string;
     email: string;
@@ -18,6 +18,19 @@ export interface User {
     firstName: string;
     lastName: string;
     roles?: string[];
+}
+export interface Comment {
+    id: string;
+    postId: string;
+    createdAt: string;
+    updatedAt: string;
+    content: string;
+    userData: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        username: string;
+    };
 }
 
 export const signInSchema = object({

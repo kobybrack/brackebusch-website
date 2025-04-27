@@ -1,5 +1,5 @@
 import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
-import PostsList from '@/components/PostsList';
+import PostsList from '@/components/post/PostsList';
 import dbClient from '@/lib/dbClient';
 import { Suspense } from 'react';
 

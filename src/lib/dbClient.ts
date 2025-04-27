@@ -1,5 +1,5 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
-import { Post, User } from './types';
+import { Post, User, Comment } from './types';
 
 class DbClient {
     private client: NeonQueryFunction<false, false>;
@@ -10,7 +10,7 @@ class DbClient {
 
     async getPostAndNearByPosts(postKey: string): Promise<Record<string, Post> | undefined> {
         const query = `
-            WITH selected_post AS (
+           WITH selected_post AS (
                 SELECT *, 'post' AS position_label
                 FROM posts
                 WHERE post_key = $1
@@ -36,25 +36,30 @@ class DbClient {
             FROM previous_post
             UNION ALL
             SELECT *
-            FROM next_post`;
+            FROM next_post
+        `;
+
         const rows = await this.client(query, [postKey]);
         if (rows.length === 0) {
             return undefined;
         }
+
         const posts = rows.reduce((acc, row) => {
             const post: Post = {
                 id: row.id,
+                postKey: row.post_key,
                 title: row.title,
                 content: row.content,
                 rawText: row.raw_text,
                 createdAt: row.created_at.toISOString(),
                 updatedAt: row.updated_at.toISOString(),
                 contentType: row.content_type,
-                postKey: row.post_key,
+                missionPost: row.mission_post,
             };
             acc[row.position_label] = post;
             return acc;
         }, {});
+
         return posts;
     }
 
@@ -62,8 +67,8 @@ class DbClient {
         const query = `
             SELECT * 
             FROM posts 
-            WHERE missionary_post = ${missionPosts} 
-            ORDER BY created_at DESC`;
+            WHERE mission_post = ${missionPosts} 
+            ORDER BY id DESC`;
         const rows = await this.client(query);
         return rows.map((row) => {
             const post: Post = {
@@ -75,6 +80,7 @@ class DbClient {
                 updatedAt: row.updated_at.toISOString(),
                 contentType: row.content_type,
                 postKey: row.post_key,
+                missionPost: row.mission_post,
             };
             return post;
         });
@@ -84,20 +90,21 @@ class DbClient {
         const query = `
             SELECT *
             FROM posts
-            ${!hasMissionsAccess ? 'WHERE missionary_post = false' : ''}
+            ${!hasMissionsAccess ? 'WHERE mission_post = false' : ''}
             ORDER BY id DESC
             LIMIT 3`;
         const rows = await this.client(query);
         return rows.map((row) => {
             const post: Post = {
                 id: row.id,
+                postKey: row.post_key,
                 title: row.title,
                 content: row.content,
                 rawText: row.raw_text,
-                createdAt: row.created_at.toISOString(),
-                updatedAt: row.updated_at.toISOString(),
+                createdAt: row.created_at,
+                updatedAt: row.updated_at,
                 contentType: row.content_type,
-                postKey: row.post_key,
+                missionPost: row.mission_post,
             };
             return post;
         });
@@ -112,7 +119,7 @@ class DbClient {
 
     async insertPost(formData: FormData): Promise<Post> {
         const query = `
-            INSERT INTO posts (title, content, content_type, post_key, missionary_post)
+            INSERT INTO posts (title, content, content_type, post_key, mission_post)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *`;
 
@@ -120,19 +127,20 @@ class DbClient {
         const content = formData.get('content') as string;
         const contentType = formData.get('content_type') as string;
         const postKey = formData.get('post_key') as string;
-        const missionaryPost = formData.get('missionary_post') === 'true';
+        const missionPost = formData.get('mission_post') === 'true';
 
-        const rows = await this.client(query, [title, content, contentType, postKey, missionaryPost]);
+        const rows = await this.client(query, [title, content, contentType, postKey, missionPost]);
         const row = rows[0];
         const post: Post = {
             id: row.id,
+            postKey: row.post_key,
             title: row.title,
             content: row.content,
             rawText: row.raw_text,
-            createdAt: row.created_at.toISOString(),
-            updatedAt: row.updated_at.toISOString(),
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
             contentType: row.content_type,
-            postKey: row.post_key,
+            missionPost: row.mission_post,
         };
         return post;
     }
@@ -140,7 +148,7 @@ class DbClient {
     async updatePost(formData: FormData): Promise<Post> {
         const query = `
             UPDATE posts
-            SET title = $1, content = $2, content_type = $3, post_key = $4, missionary_post = $5
+            SET title = $1, content = $2, content_type = $3, post_key = $4, mission_post = $5
             WHERE id = $6
             RETURNING *`;
 
@@ -148,22 +156,112 @@ class DbClient {
         const content = formData.get('content') as string;
         const contentType = formData.get('content_type') as string;
         const postKey = formData.get('post_key') as string;
-        const missionaryPost = formData.get('missionary_post') === 'true';
+        const missionPost = formData.get('mission_post') === 'true';
         const id = parseInt(formData.get('id') as string, 10);
 
-        const rows = await this.client(query, [title, content, contentType, postKey, missionaryPost, id]);
+        const rows = await this.client(query, [title, content, contentType, postKey, missionPost, id]);
         const row = rows[0];
         const post: Post = {
             id: row.id,
+            postKey: row.post_key,
             title: row.title,
             content: row.content,
             rawText: row.raw_text,
-            createdAt: row.created_at.toISOString(),
-            updatedAt: row.updated_at.toISOString(),
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
             contentType: row.content_type,
-            postKey: row.post_key,
+            missionPost: row.mission_post,
         };
         return post;
+    }
+
+    async getComments(postId: string): Promise<Comment[]> {
+        const query = `
+            SELECT 
+                comments.*,
+                users.id AS user_id,
+                users.first_name,
+                users.last_name,
+                users.username
+            FROM 
+                comments
+            INNER JOIN 
+                users
+            ON 
+                comments.user_id = users.id
+            WHERE 
+                comments.post_id = $1
+            ORDER BY comments.id DESC;
+        `;
+
+        const rows = await this.client(query, [postId]);
+
+        return rows.map((row) => ({
+            id: row.id,
+            postId: row.post_id,
+            content: row.content,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            userData: {
+                id: row.user_id,
+                firstName: row.first_name,
+                lastName: row.last_name,
+                username: row.username,
+            },
+        }));
+    }
+
+    async insertComment(postId: string, userId: string, content: string) {
+        const query = `
+        WITH inserted_comment AS (
+            INSERT INTO comments (post_id, user_id, content)
+            VALUES ($1, $2, $3)
+            RETURNING *
+        )
+        SELECT 
+            inserted_comment.*, 
+            users.id AS user_id,
+            users.first_name, 
+            users.last_name, 
+            users.username
+        FROM 
+            inserted_comment
+        INNER JOIN 
+            users
+        ON 
+            inserted_comment.user_id = users.id;
+        `;
+
+        const rows = await this.client(query, [postId, userId, content]);
+        if (rows.length !== 1) {
+            throw new Error('0 or Multiple rows returned when inserting comment');
+        }
+        const row = rows[0];
+        return {
+            id: row.id,
+            postId: row.post_id,
+            content: row.content,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            userData: {
+                id: row.user_id,
+                firstName: row.first_name,
+                lastName: row.last_name,
+                username: row.username,
+            },
+        };
+    }
+
+    async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
+        let query = `DELETE FROM comments WHERE id = $1`;
+        const params = [commentId];
+
+        if (!isAdmin) {
+            query += ` AND user_id = $2`;
+            params.push(userId);
+        }
+
+        return await this.client(query, params);
     }
 
     async getUserAndRoles(email: string, getPassword?: boolean): Promise<User | undefined> {
@@ -217,7 +315,7 @@ class DbClient {
             return undefined;
         }
         const row = rows[0];
-        const user: User = {
+        return {
             id: row.id,
             email: row.email,
             password: row.password,
@@ -225,10 +323,15 @@ class DbClient {
             firstName: row.first_name,
             lastName: row.last_name,
         };
-        return user;
     }
 
-    async createUser(createUserBody: { email: string; password?: string; username?: string }): Promise<User> {
+    async createUser(createUserBody: {
+        email: string;
+        password?: string;
+        username?: string;
+        firstName?: string;
+        lastName?: string;
+    }): Promise<User> {
         const { email, password, username } = createUserBody;
         const existingUserQuery = `
             SELECT id, email
@@ -243,8 +346,8 @@ class DbClient {
         }
 
         const query = `
-            INSERT INTO users (email, password, username)
-            VALUES ($1, $2, $3)
+            INSERT INTO users (email, password, username, first_name, last_name)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *;
         `;
 
