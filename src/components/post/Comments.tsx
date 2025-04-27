@@ -29,16 +29,11 @@ export default function Comments({
     const [showAllComments, setShowAllComments] = useState(false);
 
     const handleSubmit = async (_: any, formData: FormData) => {
-        try {
-            await submitComment(formData);
-            setContent('');
-        } catch (error) {
-            console.error(error);
-            if (error && error instanceof Error) {
-                return error.message;
-            }
+        const error = await submitComment(formData);
+        if (error) {
+            return error;
         }
-        return null;
+        setContent('');
     };
 
     const [errorMessage, formAction, isPending, reset] = useResettableActionState(handleSubmit, null);

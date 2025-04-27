@@ -22,7 +22,7 @@ export function useSubmitComment(postId: string) {
         mutationKey: ['submitComment', postId],
         mutationFn: async (formData: FormData) => {
             if (!postId || !formData) {
-                throw new Error('Invalid input');
+                throw new Error('Invalid input to submitComment');
             }
             const response = await fetch(`/api/posts/${postId}/comments`, {
                 method: 'POST',
@@ -30,7 +30,7 @@ export function useSubmitComment(postId: string) {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to submit comment');
+                return 'Failed to submit comment';
             }
             const data = await response.json();
             queryClient.setQueryData(['comments', postId], (oldData: Comment[] | undefined) => {
@@ -50,14 +50,14 @@ export function useDeleteComment(postId: string) {
         mutationKey: ['deleteComment', postId],
         mutationFn: async (commentId: string) => {
             if (!postId || !commentId) {
-                throw new Error('Invalid input');
+                throw new Error('Invalid input to deleteComment');
             }
             const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
                 method: 'DELETE',
             });
 
             if (!response.ok) {
-                throw new Error('Failed to delete comment');
+                return 'Failed to delete comment';
             }
             queryClient.setQueryData(['comments', postId], (oldData: Comment[] | undefined) => {
                 if (!oldData) return [];
