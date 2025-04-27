@@ -1,5 +1,5 @@
 import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
-import PostPreviewCard from '@/components/PostPreviewCard';
+import PostPreviewCard from '@/components/post/PostPreviewCard';
 import dbClient from '@/lib/dbClient';
 import Link from 'next/link';
 import { Suspense } from 'react';

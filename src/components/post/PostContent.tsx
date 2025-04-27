@@ -31,7 +31,7 @@ export default function PostContent({ post }: PostContentProps) {
     };
 
     return (
-        <div className="grow w-full max-w-(--breakpoint-md) mx-auto">
+        <div className="w-full">
             <div className="prose">
                 <h1>{post.title}</h1>
                 <Markdown

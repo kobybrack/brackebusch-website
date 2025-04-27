@@ -22,10 +22,11 @@ const profile = async (profile: Profile | GitHubProfile) => {
             customId: user.id,
         };
     }
+    const [firstName, lastName] = profile.name?.split(' ') || [];
 
     // user does not exist, create a new user
     const username = generateUsername(email);
-    const createdUser = await dbClient.createUser({ email, username });
+    const createdUser = await dbClient.createUser({ email, username, firstName, lastName });
 
     return {
         ...createdUser,

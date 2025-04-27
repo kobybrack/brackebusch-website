@@ -1,12 +1,10 @@
 'use server';
 
-import { signIn } from '@/auth';
-import { AuthError } from 'next-auth';
-import dbClient from './dbClient';
+import { auth, signIn } from '@/auth';
+import dbClient from '@/lib/dbClient';
 import { handleAuthError, saltAndHashPassword } from '@/lib/authenticationHelpers';
-import { generateUsername } from './miscHelpers';
+import { generateUsername } from '@/lib/miscHelpers';
 import { signInSchema } from '@/lib/types';
-import { ZodError } from 'zod';
 
 export async function login(_: string | null, formData: FormData) {
     try {
@@ -39,4 +37,11 @@ export async function createEmailUser(_: string | null, formData: FormData) {
     }
     // for type safety
     return null;
+}
+
+export async function submitComment(formData: FormData) {
+    const session = await auth();
+    const content = formData.get('content') as string;
+    const postId = formData.get('postId') as string;
+    await dbClient.insertComment(postId, session?.user?.id as string, content);
 }
