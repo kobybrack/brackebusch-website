@@ -4,9 +4,9 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { login } from '@/lib/actions';
 import Link from 'next/link';
-import { useResettableActionState } from '@/hooks/useResettableActionState';
+import useResettableActionState from '@/hooks/useResettableActionState';
 import { useReCaptcha } from 'next-recaptcha-v3';
-import RecaptchaDisclaimer from './RecaptchaDisclaimer';
+import RecaptchaDisclaimer from '../RecaptchaDisclaimer';
 
 export default function LoginPage() {
     const searchParams = useSearchParams();

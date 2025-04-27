@@ -2,9 +2,9 @@
 
 import { createEmailUser } from '@/lib/actions';
 import { useReCaptcha } from 'next-recaptcha-v3';
-import { useResettableActionState } from '@/hooks/useResettableActionState';
+import useResettableActionState from '@/hooks/useResettableActionState';
 import Link from 'next/link';
-import RecaptchaDisclaimer from './RecaptchaDisclaimer';
+import RecaptchaDisclaimer from '@/components/RecaptchaDisclaimer';
 
 export default function SignUpPage() {
     const { executeRecaptcha } = useReCaptcha();

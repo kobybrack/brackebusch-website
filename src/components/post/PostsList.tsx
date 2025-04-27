@@ -2,7 +2,7 @@
 
 import { Post } from '@/lib/types';
 import { useState } from 'react';
-import PostPreviewCard from '@/components/PostPreviewCard';
+import PostPreviewCard from '@/components/post/PostPreviewCard';
 
 interface PostsListProps {
     posts: Post[];

@@ -18,22 +18,10 @@ const editorHeaderPages = {
 };
 
 export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: string[] }) {
-    const [menuDisplay, setMenuDisplay] = useState(true);
-    const [displayMenuStyle, setDisplayMenuStyle] = useState('');
-
     const headerPages = {
         ...baseHeaderPages,
         ...(roles.includes('missions') ? missionHeaderPages : {}),
         ...(roles.includes('editor') ? editorHeaderPages : {}),
-    };
-
-    const showMenu = () => {
-        setMenuDisplay(!menuDisplay);
-        if (menuDisplay) {
-            setDisplayMenuStyle('');
-        } else {
-            setDisplayMenuStyle('none');
-        }
     };
 
     const handleLinkClick = () => {
@@ -55,8 +43,8 @@ export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: 
         <div className="w-full z-50 flex justify-center">
             <div className="navbar">
                 <div className="navbar-start">
-                    <div className="dropdown" onClick={showMenu}>
-                        <div tabIndex={0} role="button" className="btn btn-ghost sm:hidden ml-2">
+                    <div className="dropdown">
+                        <div tabIndex={0} role="button" className={`btn btn-ghost btn-square sm:hidden ml-2`}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-5 w-5"
@@ -73,9 +61,8 @@ export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: 
                             </svg>
                         </div>
                         <ul
-                            style={{ display: displayMenuStyle }}
                             tabIndex={0}
-                            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow-sm"
+                            className="dropdown-content menu menu-sm bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow-sm"
                         >
                             {navItems}
                         </ul>
