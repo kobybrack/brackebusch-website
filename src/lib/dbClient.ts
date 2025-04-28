@@ -332,7 +332,7 @@ class DbClient {
         firstName?: string;
         lastName?: string;
     }): Promise<User> {
-        const { email, password, username } = createUserBody;
+        const { email, password, username, firstName, lastName } = createUserBody;
         const existingUserQuery = `
             SELECT id, email
             FROM users
@@ -350,9 +350,7 @@ class DbClient {
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *;
         `;
-
-        // Pass the parameters in the same order as the placeholders
-        const values = [email, password, username];
+        const values = [email, password, username, firstName, lastName];
 
         // Execute the query using your database client
         const rows = await this.client(query, values);
