@@ -11,7 +11,11 @@ export default function PostPreviewCard({ post }: { post: Post }) {
         year: 'numeric',
     });
     return (
-        <Link key={post.id} href={`/posts/${post.postKey}`} className="w-full no-underline">
+        <Link
+            key={post.id}
+            href={`/${post.missionPost ? 'missions' : 'posts'}/${post.postKey}`}
+            className="w-full no-underline"
+        >
             <div className="card card-border shadow-xs w-full hover:bg-base-200">
                 <div className="card-body">
                     <h2 className="card-title !m-0">{post.title}</h2>
