@@ -26,10 +26,15 @@ export default async function PostServerComponent({
     }
 
     const loadingText = 'Loading post...';
-    const result = await dbClient.getPostAndNearByPosts(postKey);
-    if (!result || !result.post || (!missionPost && result.post.missionPost)) {
+    const result = await dbClient.getPostAndNearByPosts(postKey, missionPost);
+    if (!result || !result.post) {
         return <div>Post not found</div>;
     }
+
+    if (!missionPost && result.post.missionPost) {
+        redirect(`/missions/${postKey}`);
+    }
+
     if (missionPost && !result.post.missionPost) {
         redirect(`/posts/${postKey}`);
     }

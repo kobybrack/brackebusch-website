@@ -8,38 +8,35 @@ class DbClient {
         this.client = neon(`${process.env.DATABASE_URL}`);
     }
 
-    async getPostAndNearByPosts(postKey: string): Promise<Record<string, Post> | undefined> {
+    async getPostAndNearByPosts(postKey: string, missionPost = false): Promise<Record<string, Post> | undefined> {
         const query = `
-           WITH selected_post AS (
+            WITH selected_post AS (
                 SELECT *, 'post' AS position_label
                 FROM posts
-                WHERE post_key = $1
+                WHERE post_key = $1 AND mission_post = $2
             ),
             previous_post AS (
                 SELECT *, 'previous' AS position_label
                 FROM posts
-                WHERE id < (SELECT id FROM selected_post)
+                WHERE id < (SELECT id FROM selected_post) AND mission_post = $2
                 ORDER BY id DESC
                 LIMIT 1
             ),
             next_post AS (
                 SELECT *, 'next' AS position_label
                 FROM posts
-                WHERE id > (SELECT id FROM selected_post)
+                WHERE id > (SELECT id FROM selected_post) AND mission_post = $2
                 ORDER BY id ASC
                 LIMIT 1
             )
-            SELECT *
-            FROM selected_post
+            SELECT * FROM selected_post
             UNION ALL
-            SELECT *
-            FROM previous_post
+            SELECT * FROM previous_post
             UNION ALL
-            SELECT *
-            FROM next_post
+            SELECT * FROM next_post;
         `;
 
-        const rows = await this.client(query, [postKey]);
+        const rows = await this.client(query, [postKey, missionPost]);
         if (rows.length === 0) {
             return undefined;
         }

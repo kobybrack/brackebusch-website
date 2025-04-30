@@ -13,7 +13,11 @@ export default function PostNavigationButtons({ previousPost, nextPost }: PostNa
                 <button className={`btn w-[90px] ${post ? '' : 'btn-disabled'}`}>{label}</button>
             </div>
         );
-        return post ? <Link href={`/posts/${post.postKey}`}>{button}</Link> : button;
+        return post ? (
+            <Link href={`/${post.missionPost ? 'missions' : 'posts'}/${post.postKey}`}>{button}</Link>
+        ) : (
+            button
+        );
     };
 
     const previousButton = renderButton(previousPost, 'Previous');
