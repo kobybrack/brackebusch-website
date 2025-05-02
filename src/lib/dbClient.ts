@@ -1,11 +1,41 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
 import { Post, User, Comment } from './types';
 
+const dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) {
+    throw new Error('Missing required environment variables for neon db');
+}
+
 class DbClient {
     private client: NeonQueryFunction<false, false>;
 
     constructor() {
         this.client = neon(`${process.env.DATABASE_URL}`);
+    }
+
+    async getPostFromId(postId: string) {
+        const query = `
+            SELECT *
+            FROM posts
+            WHERE id = $1;
+        `;
+
+        const rows = await this.client(query, [postId]);
+        if (rows.length !== 1) {
+            return undefined;
+        }
+        const row = rows[0];
+        return {
+            id: row.id,
+            postKey: row.post_key,
+            title: row.title,
+            content: row.content,
+            rawText: row.raw_text,
+            createdAt: row.created_at.toISOString(),
+            updatedAt: row.updated_at.toISOString(),
+            contentType: row.content_type,
+            missionPost: row.mission_post,
+        };
     }
 
     async getPostAndNearByPosts(postKey: string, missionPost = false): Promise<Record<string, Post> | undefined> {
@@ -357,15 +387,13 @@ class DbClient {
             throw new Error('A user already exists with this email');
         }
 
-        const query = `
+        const userInsertQuery = `
             INSERT INTO users (email, password, username, first_name, last_name)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *;
         `;
-        const values = [email, password, username, firstName, lastName];
 
-        // Execute the query using your database client
-        const rows = await this.client(query, values);
+        const rows = await this.client(userInsertQuery, [email, password, username, firstName, lastName]);
         const row = rows[0];
         const user: User = {
             id: row.id,
@@ -375,6 +403,14 @@ class DbClient {
             firstName: row.first_name,
             lastName: row.last_name,
         };
+
+        const userPreferenceInsertQuery = `
+            INSERT INTO user_preferences (user_id)
+            VALUES ($1);
+        `;
+
+        await this.client(userPreferenceInsertQuery, [user.id]);
+
         return user;
     }
 

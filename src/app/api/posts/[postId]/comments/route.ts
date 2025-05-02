@@ -1,5 +1,6 @@
 import { auth } from '@/auth';
 import dbClient from '@/lib/dbClient';
+import microsoftGraphClient from '@/lib/microsoftGraphClient';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ postId: string }> }) {
     const { postId } = await params;
@@ -22,5 +23,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pos
     }
 
     const comment = await dbClient.insertComment(postId, userId, content);
+    getPostAndSendCommentEmail(postId);
     return Response.json({ comment });
+}
+
+async function getPostAndSendCommentEmail(postId: string) {
+    const post = await dbClient.getPostFromId(postId);
+    if (post) {
+        await microsoftGraphClient.sendCommentEmail(post);
+    }
 }

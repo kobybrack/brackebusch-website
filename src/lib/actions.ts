@@ -4,7 +4,7 @@ import { auth, signIn } from '@/auth';
 import dbClient from '@/lib/dbClient';
 import { handleAuthError, saltAndHashPassword } from '@/lib/authenticationHelpers';
 import { generateUsername } from '@/lib/miscHelpers';
-import { signInSchema } from '@/lib/types';
+import { Post, signInSchema } from '@/lib/types';
 import microsoftGraphClient from './microsoftGraphClient';
 import removeMd from 'remove-markdown';
 
@@ -27,9 +27,10 @@ export async function submitPost(formData: FormData) {
                   .slice(0, 50)
             : `untitled-${Date.now()}`;
         formData.append('post_key', postKey);
-        const post = await dbClient.upsertPost(formData);
+        // const post = await dbClient.upsertPost(formData);
+        const post = { postKey: 'hey', title: 'cool!' } as unknown as Post;
         const emails = await dbClient.getUsersWhoWantEmails(isMissionPost);
-        await microsoftGraphClient.sendEmails(emails, post);
+        await microsoftGraphClient.sendPostEmails(emails, post);
         return post;
     } catch (error) {
         if (error instanceof Error) {
