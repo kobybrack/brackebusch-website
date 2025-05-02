@@ -8,7 +8,6 @@ import Markdown from 'react-markdown';
 export default function PostEditor() {
     const [text, setText] = useState<string>('');
     const [title, setTitle] = useState<string>('');
-    const [isMissionaryPost, setIsMissionaryPost] = useState<boolean>(false);
     const [postId, setPostId] = useState<string | undefined>(undefined);
     const submitModalRef = useRef<HTMLDialogElement | null>(null);
 
@@ -161,13 +160,7 @@ export default function PostEditor() {
             </div>
             <div className="flex flex-col justify-center items-start gap-4">
                 <div className="flex flex-row justify-center items-start gap-2">
-                    <input
-                        name="mission_post"
-                        type="checkbox"
-                        className="checkbox"
-                        checked={isMissionaryPost}
-                        onChange={(e) => setIsMissionaryPost(e.target.checked)}
-                    />
+                    <input name="mission_post" type="checkbox" className="checkbox" />
                     This is a missionary post
                 </div>
                 <button type="submit" className="btn self-start" disabled={isPending}>
