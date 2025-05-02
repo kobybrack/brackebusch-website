@@ -27,8 +27,7 @@ export async function submitPost(formData: FormData) {
                   .slice(0, 50)
             : `untitled-${Date.now()}`;
         formData.append('post_key', postKey);
-        // const post = await dbClient.upsertPost(formData);
-        const post = { postKey: 'hey', title: 'cool!' } as unknown as Post;
+        const post = await dbClient.upsertPost(formData);
         const emails = await dbClient.getUsersWhoWantEmails(isMissionPost);
         await microsoftGraphClient.sendPostEmails(emails, post);
         return post;
