@@ -116,17 +116,18 @@ class DbClient {
 
     async insertPost(formData: FormData): Promise<Post> {
         const query = `
-            INSERT INTO posts (title, content, content_type, post_key, mission_post)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO posts (title, content, raw_text, content_type, post_key, mission_post)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *`;
 
         const title = formData.get('title') as string;
         const content = formData.get('content') as string;
+        const rawText = formData.get('raw_text') as string;
         const contentType = formData.get('content_type') as string;
         const postKey = formData.get('post_key') as string;
         const missionPost = formData.get('mission_post') === 'true';
 
-        const rows = await this.client(query, [title, content, contentType, postKey, missionPost]);
+        const rows = await this.client(query, [title, content, rawText, contentType, postKey, missionPost]);
         const row = rows[0];
         const post: Post = {
             id: row.id,
@@ -320,6 +321,20 @@ class DbClient {
             firstName: row.first_name,
             lastName: row.last_name,
         };
+    }
+
+    async getUsersWhoWantEmails(missionPost = false) {
+        const query = `
+            SELECT u.email
+            FROM users u
+            JOIN user_preferences up ON u.id = up.user_id
+            ${missionPost ? 'JOIN user_role_mappings urm ON u.id = urm.user_id JOIN roles r ON urm.role_id = r.id' : ''}
+            WHERE up.${missionPost ? 'mission_notifications' : 'post_notifications'} = TRUE
+            ${missionPost ? "AND r.role_name = 'missions'" : ''};
+        `;
+
+        const rows = await this.client(query);
+        return rows.map(({ email }) => email);
     }
 
     async createUser(createUserBody: {
