@@ -15,8 +15,8 @@ export interface User {
     email: string;
     password?: string;
     username: string;
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
     roles?: string[];
 }
 export interface Comment {
@@ -27,8 +27,8 @@ export interface Comment {
     content: string;
     userData: {
         userId: string;
-        firstName: string;
-        lastName: string;
+        firstName?: string;
+        lastName?: string;
         username: string;
     };
 }
