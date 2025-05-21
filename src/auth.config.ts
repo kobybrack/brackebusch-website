@@ -73,10 +73,15 @@ export default {
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = (user.customId ? user.customId : user.id) || '';
                 token.roles = getEffectiveRoles(user.roles || []);
+            } else if (trigger === 'update') {
+                const dbUser = await dbClient.getUserAndRoles(token.email || '');
+                if (dbUser) {
+                    token.roles = getEffectiveRoles(dbUser.roles || []);
+                }
             }
             return token;
         },

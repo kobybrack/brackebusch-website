@@ -330,7 +330,7 @@ class DbClient {
     async getUser(email: string, getPassword?: boolean): Promise<User | undefined> {
         const query = `
             SELECT 
-                id
+                id,
                 email,    
                 ${getPassword ? 'password,' : ''}
                 username,
@@ -412,6 +412,67 @@ class DbClient {
         await this.client(userPreferenceInsertQuery, [user.id]);
 
         return user;
+    }
+
+    async updateUser(updateUserBody: any): Promise<User & { roleAdded: boolean }> {
+        const { email, username, firstName, lastName, postNotifications, missionNotifications, roleCode } =
+            updateUserBody;
+
+        try {
+            let rows = await this.client(
+                `UPDATE users
+                 SET username = $1, first_name = $2, last_name = $3
+                 WHERE email = $4
+                 RETURNING id, email, username, first_name, last_name;`,
+                [username, firstName, lastName, email],
+            );
+
+            if (rows.length === 0) {
+                throw new Error('User update failed or user not found.');
+            }
+
+            const user = rows[0];
+
+            rows = await this.client(
+                `UPDATE user_preferences
+                 SET post_notifications = $1, mission_notifications = $2
+                 WHERE user_id = $3
+                 RETURNING post_notifications, mission_notifications;`,
+                [postNotifications, missionNotifications, user.id],
+            );
+
+            let roleAdded = false;
+            if (roleCode === process.env.MISSION_ROLE_CODE) {
+                const roleInsertQuery = `
+                    INSERT INTO user_role_mappings (user_id, role_id)
+                    SELECT $1, id
+                    FROM roles
+                    WHERE role_name = 'missions'
+                    ON CONFLICT (user_id, role_id) DO NOTHING;
+                `;
+                await this.client(roleInsertQuery, [user.id]);
+                roleAdded = true;
+            }
+
+            return {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                userPreferences: {
+                    postNotifications: rows[0].post_notifications,
+                    missionNotifications: rows[0].mission_notifications,
+                },
+                roleAdded,
+            };
+        } catch (err) {
+            let errMessage;
+            if (err instanceof Error) {
+                errMessage = err.message;
+            }
+            throw new Error(`User update failed: ${errMessage}`);
+        }
     }
 
     async getRoles(userId: string): Promise<string[]> {
