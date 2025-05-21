@@ -11,33 +11,32 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
     const { update } = useSession();
 
     const updateUserAction = async (_: any, formData: any) => {
-        console.log('post notifications', formData.get('post_notifications'));
         const updateUserBody = {
             email: formData.get('email'),
             username: formData.get('username'),
             firstName: formData.get('first_name'),
             lastName: formData.get('last_name'),
             userPreferences: {
-                postNotifications: formData.get('post_notifications') === 'true',
-                missionNotifications: formData.get('mission_notifications') === 'true',
+                postNotifications: formData.get('post_notifications') === 'on',
+                missionNotifications: formData.get('mission_notifications') === 'on',
             },
+            roleCode: formData.get('role_code'),
         };
-        const backupUser = { ...user };
+        setUser((prevUser) => ({
+            ...prevUser,
+            ...updateUserBody,
+        }));
         try {
-            const updatedUser = await updateUser({ ...updateUserBody, roleCode: formData.get('role_code') });
-            setUser((prevUser) => ({
-                ...prevUser,
-                ...updatedUser,
-            }));
+            const updatedUser = await updateUser(updateUserBody);
             if (updatedUser.roleAdded) {
                 await update('sync roles'); // dummy text
                 window.location.reload();
             }
         } catch (error) {
-            setUser(backupUser);
             if (error instanceof Error) {
-                return 'Something went wrong updating the user: ' + error.message;
+                return error.message;
             }
+            return 'Something went wrong :(';
         }
         return null;
     };
@@ -48,7 +47,10 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
         <div className="flex flex-col justify-center max-w-(--breakpoint-md) mx-auto gap-8">
             <form className="" action={formAction}>
                 <fieldset className="fieldset border-base-300 rounded-box w-full border p-4 flex flex-col sm:grid sm:grid-cols-2 gap-y-2 gap-x-4">
-                    <label className="fieldset-legend col-span-2">Account settings</label>
+                    <label className="fieldset-legend col-span-2">
+                        <p>Account settings</p>
+                        <p className="text-error w-1/2">{error}</p>
+                    </label>
                     <div className="flex flex-col gap-1">
                         <label className="label">Email</label>
                         <input type="text" className="input w-full" disabled value={user.email} />
@@ -56,13 +58,16 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                     </div>
                     <div className="flex flex-col gap-1">
                         <label className="label">Username </label>
-                        <input
-                            name="username"
-                            type="text"
-                            className="input w-full"
-                            defaultValue={user.username}
-                            autoComplete="off"
-                        />
+                        <div className="tooltip" data-tip="This isn't used anywhere yet">
+                            <input
+                                name="username"
+                                type="text"
+                                className="input w-full"
+                                onChange={reset}
+                                defaultValue={user.username}
+                                autoComplete="off"
+                            />
+                        </div>
                     </div>
                     <div className="flex flex-col gap-1">
                         <label className="label">First name</label>
@@ -70,6 +75,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                             name="first_name"
                             type="text"
                             className="input w-full"
+                            onChange={reset}
                             defaultValue={user.firstName}
                             autoComplete="off"
                         />
@@ -80,6 +86,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                             name="last_name"
                             type="text"
                             className="input w-full"
+                            onChange={reset}
                             defaultValue={user.lastName}
                             autoComplete="off"
                         />
@@ -90,12 +97,12 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                     </div>
                     <div className="flex flex-col justify-center gap-2 col-span-1">
                         <label className="label" />
-                        <label className="label">
+                        <label className="label ">
                             <input
                                 name="post_notifications"
                                 type="checkbox"
                                 className="checkbox"
-                                defaultValue={user.userPreferences?.postNotifications ? 'true' : 'false'}
+                                defaultChecked={user.userPreferences?.postNotifications}
                             />
                             <p>Email me when there's a new post</p>
                         </label>
@@ -105,7 +112,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                                     name="mission_notifications"
                                     type="checkbox"
                                     className="checkbox"
-                                    defaultValue={user.userPreferences?.missionNotifications ? 'true' : 'false'}
+                                    defaultChecked={user.userPreferences?.missionNotifications}
                                 />
                                 <p>
                                     Email me when there's a new <em>mission</em> post
