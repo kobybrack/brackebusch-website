@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pos
     }
 
     const comment = await dbClient.insertComment(postId, userId, content);
-    getPostAndSendCommentEmail(postId);
+    setTimeout(() => getPostAndSendCommentEmail(postId), 0);
     return Response.json({ comment });
 }
 

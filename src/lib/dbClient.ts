@@ -292,6 +292,46 @@ class DbClient {
         return await this.client(query, params);
     }
 
+    async getUserRolesAndPreferences(email: string): Promise<User | undefined> {
+        const query = `
+           SELECT 
+                u.id AS user_id,
+                u.email,
+                u.username,
+                u.first_name,
+                u.last_name,
+                up.post_notifications,
+                up.mission_notifications,
+                r.role_name
+            FROM users u
+            LEFT JOIN user_preferences up ON u.id = up.user_id
+            LEFT JOIN user_role_mappings urm ON u.id = urm.user_id
+            LEFT JOIN roles r ON urm.role_id = r.id
+            WHERE u.email = $1;
+        `;
+
+        const rows = await this.client(query, [email]);
+
+        if (!rows.length) {
+            return undefined;
+        }
+
+        const row = rows[0];
+        return {
+            id: row.user_id,
+            email: row.email,
+            password: row.password,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            roles: rows.map((row) => row.role_name).filter((role) => role !== null),
+            userPreferences: {
+                postNotifications: row.post_notifications,
+                missionNotifications: row.mission_notifications,
+            },
+        };
+    }
+
     async getUserAndRoles(email: string, getPassword?: boolean): Promise<User | undefined> {
         const query = `
             SELECT 
@@ -314,7 +354,6 @@ class DbClient {
             return undefined;
         }
 
-        // Extract user data from the first row
         const row = rows[0];
         return {
             id: row.user_id,
@@ -330,7 +369,7 @@ class DbClient {
     async getUser(email: string, getPassword?: boolean): Promise<User | undefined> {
         const query = `
             SELECT 
-                id
+                id,
                 email,    
                 ${getPassword ? 'password,' : ''}
                 username,
@@ -412,6 +451,63 @@ class DbClient {
         await this.client(userPreferenceInsertQuery, [user.id]);
 
         return user;
+    }
+
+    async updateUser(updateUserBody: any): Promise<User & { roleAdded: boolean }> {
+        const { email, username, firstName, lastName, userPreferences, roleCode } = updateUserBody;
+        const { postNotifications, missionNotifications } = userPreferences;
+        let rows = await this.client(`SELECT email from users where username = $1;`, [username]);
+        if (rows.length > 0 && rows[0].email !== email) {
+            throw new Error('This username is taken');
+        }
+
+        rows = await this.client(
+            `UPDATE users
+                 SET username = $1, first_name = $2, last_name = $3
+                 WHERE email = $4
+                 RETURNING id, email, username, first_name, last_name;`,
+            [username, firstName, lastName, email],
+        );
+
+        if (rows.length === 0) {
+            throw new Error('User update failed or user not found.');
+        }
+
+        const user = rows[0];
+
+        rows = await this.client(
+            `UPDATE user_preferences
+                 SET post_notifications = $1, mission_notifications = $2
+                 WHERE user_id = $3
+                 RETURNING post_notifications, mission_notifications;`,
+            [postNotifications, missionNotifications, user.id],
+        );
+
+        let roleAdded = false;
+        if (roleCode === process.env.MISSION_ROLE_CODE) {
+            const roleInsertQuery = `
+                    INSERT INTO user_role_mappings (user_id, role_id)
+                    SELECT $1, id
+                    FROM roles
+                    WHERE role_name = 'missions'
+                    ON CONFLICT (user_id, role_id) DO NOTHING;
+                `;
+            await this.client(roleInsertQuery, [user.id]);
+            roleAdded = true;
+        }
+
+        return {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            userPreferences: {
+                postNotifications: rows[0].post_notifications,
+                missionNotifications: rows[0].mission_notifications,
+            },
+            roleAdded,
+        };
     }
 
     async getRoles(userId: string): Promise<string[]> {

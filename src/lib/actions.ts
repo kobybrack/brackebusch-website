@@ -4,7 +4,7 @@ import { auth, signIn } from '@/auth';
 import dbClient from '@/lib/dbClient';
 import { handleAuthError, saltAndHashPassword } from '@/lib/authenticationHelpers';
 import { generateUsername } from '@/lib/miscHelpers';
-import { Post, signInSchema } from '@/lib/types';
+import { signInSchema } from '@/lib/types';
 import microsoftGraphClient from './microsoftGraphClient';
 import removeMd from 'remove-markdown';
 
@@ -78,4 +78,8 @@ export async function submitComment(formData: FormData) {
     const content = formData.get('content') as string;
     const postId = formData.get('postId') as string;
     await dbClient.insertComment(postId, session?.user?.id as string, content);
+}
+
+export async function updateUser(updateUserBody: any) {
+    return dbClient.updateUser(updateUserBody);
 }

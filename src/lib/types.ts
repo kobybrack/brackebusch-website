@@ -18,6 +18,10 @@ export interface User {
     firstName?: string;
     lastName?: string;
     roles?: string[];
+    userPreferences?: {
+        postNotifications: boolean;
+        missionNotifications: boolean;
+    };
 }
 export interface Comment {
     id: string;
