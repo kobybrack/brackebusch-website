@@ -53,7 +53,7 @@ export default {
                     const { email, password } = parseResult.data;
 
                     const user = await dbClient.getUserAndRoles(email, true);
-                    if (!user || !(await checkPassword(password, user.password || ''))) {
+                    if (!user || !(await checkPassword(password, user.password as string))) {
                         return null;
                     }
                     delete user.password;
@@ -75,10 +75,10 @@ export default {
     callbacks: {
         async jwt({ token, user, trigger }) {
             if (user) {
-                token.id = (user.customId ? user.customId : user.id) || '';
+                token.id = (user.customId ? user.customId : user.id) as string;
                 token.roles = getEffectiveRoles(user.roles || []);
             } else if (trigger === 'update') {
-                const dbUser = await dbClient.getUserAndRoles(token.email || '');
+                const dbUser = await dbClient.getUserAndRoles(token.email as string);
                 if (dbUser) {
                     token.roles = getEffectiveRoles(dbUser.roles || []);
                 }
@@ -86,7 +86,7 @@ export default {
             return token;
         },
         session({ session, token }) {
-            session.user.id = token.id || '';
+            session.user.id = token.id as string;
             session.user.roles = token.roles;
             return session;
         },

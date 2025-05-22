@@ -46,7 +46,7 @@ export default function RootLayout({
                     <ServerNavbarWrapper />
                 </header>
                 <main className="px-8" style={mainStyles}>
-                    <Providers siteKey={process.env.RECAPTCHA_SITE_KEY || ''}>{children}</Providers>
+                    <Providers siteKey={process.env.RECAPTCHA_SITE_KEY as string}>{children}</Providers>
                 </main>
                 <footer className="pt-2 pb-8" />
             </body>

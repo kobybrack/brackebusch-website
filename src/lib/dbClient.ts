@@ -316,7 +316,6 @@ class DbClient {
             return undefined;
         }
 
-        // Extract user data from the first row
         const row = rows[0];
         return {
             id: row.user_id,
@@ -355,7 +354,6 @@ class DbClient {
             return undefined;
         }
 
-        // Extract user data from the first row
         const row = rows[0];
         return {
             id: row.user_id,

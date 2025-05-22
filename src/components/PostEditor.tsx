@@ -154,7 +154,7 @@ export default function PostEditor() {
                 <div className="tab-content" role="tabpanel">
                     <div className="border border-base-300 rounded-box p-6 prose w-full">
                         <h1>{title}</h1>
-                        <Markdown children={text || ''} />
+                        <Markdown children={text} />
                     </div>
                 </div>
             </div>

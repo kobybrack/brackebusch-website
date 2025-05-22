@@ -9,7 +9,7 @@ export default async function AccountServerComponent() {
     if (!session?.user) {
         redirect('/login?redirectUrl=/account');
     }
-    const user = await dbClient.getUserRolesAndPreferences(session.user.email || '');
+    const user = await dbClient.getUserRolesAndPreferences(session.user.email as string);
     if (!user) {
         throw new Error('no user found during account page!');
     }
