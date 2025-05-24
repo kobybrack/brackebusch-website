@@ -2,7 +2,6 @@ This is a Next.js project I made to create a blog. Instead of doing static posts
 
 On the current roadmap:
 
-- emails for new post
 - comment replies
 - emails for comments/comment replies
 - guest posts
