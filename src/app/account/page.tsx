@@ -16,7 +16,7 @@ export default async function AccountServerComponent() {
 
     return (
         <SessionProvider session={session}>
-            <AccountClientComponent initialUser={user} />;
+            <AccountClientComponent initialUser={user} />
         </SessionProvider>
     );
 }

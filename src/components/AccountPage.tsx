@@ -92,7 +92,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                         />
                     </div>
                     <div className="flex flex-col gap-1 col-span-1">
-                        <label className="label">Have a role code?</label>
+                        <label className="label">Have an access code?</label>
                         <input name="role_code" type="text" className="input w-full" autoComplete="off" />
                     </div>
                     <div className="flex flex-col justify-center gap-2 col-span-1">
