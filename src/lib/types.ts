@@ -35,6 +35,8 @@ export interface Comment {
         lastName?: string;
         username: string;
     };
+    parentCommentId?: string | null;
+    replies: Comment[];
 }
 
 export const signInSchema = object({

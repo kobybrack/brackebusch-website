@@ -206,37 +206,48 @@ class DbClient {
     async getComments(postId: string): Promise<Comment[]> {
         const query = `
             SELECT 
-                comments.*,
-                users.id AS user_id,
-                users.first_name,
-                users.last_name,
-                users.username
+                c.id, c.post_id, c.content, c.created_at, c.updated_at, c.parent_comment_id,
+                u.id AS user_id, u.first_name, u.last_name, u.username
             FROM 
-                comments
+                comments c
             INNER JOIN 
-                users
+                users u
             ON 
-                comments.user_id = users.id
+                c.user_id = u.id
             WHERE 
-                comments.post_id = $1
-            ORDER BY comments.id DESC;
+                c.post_id = $1
+            ORDER BY 
+                c.parent_comment_id IS NULL DESC, c.id ASC;
         `;
 
         const rows = await this.client(query, [postId]);
+        const commentMap: Record<string, Comment> = {};
 
-        return rows.map((row) => ({
-            id: row.id,
-            postId: row.post_id,
-            content: row.content,
-            createdAt: row.created_at,
-            updatedAt: row.updated_at,
-            userData: {
-                userId: row.user_id,
-                firstName: row.first_name,
-                lastName: row.last_name,
-                username: row.username,
-            },
-        }));
+        rows.forEach((row) => {
+            const comment = {
+                id: row.id,
+                postId: row.post_id,
+                content: row.content,
+                createdAt: row.created_at,
+                updatedAt: row.updated_at,
+                parentCommentId: row.parent_comment_id,
+                userData: {
+                    userId: row.user_id,
+                    firstName: row.first_name,
+                    lastName: row.last_name,
+                    username: row.username,
+                },
+                replies: [],
+            };
+
+            if (row.parent_comment_id && commentMap[row.parent_comment_id]) {
+                commentMap[row.parent_comment_id].replies.push(comment);
+            } else {
+                commentMap[row.id] = comment;
+            }
+        });
+
+        return Object.values(commentMap);
     }
 
     async insertComment(postId: string, userId: string, content: string): Promise<Comment> {
@@ -277,6 +288,7 @@ class DbClient {
                 lastName: row.last_name,
                 username: row.username,
             },
+            replies: [],
         };
     }
 

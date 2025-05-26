@@ -7,6 +7,7 @@ import { useDeleteComment, useGetComments, useSubmitComment } from '@/hooks/comm
 import LoadingSpinnerWithText from '../LoadingSpinnerWithText';
 import { User } from '@/lib/types';
 import useResettableActionState from '@/hooks/useResettableActionState';
+import Comment from '@/components/post/Comment';
 
 const INITIAL_COMMENTS_TO_SHOW = 4;
 
@@ -21,12 +22,12 @@ export default function Comments({
 }) {
     const { data: comments, isLoading } = useGetComments(postId);
     const { submitComment } = useSubmitComment(postId);
-    const { deleteComment } = useDeleteComment(postId);
 
     const [isFocused, setIsFocused] = useState(false);
     const [cancelled, setCancelled] = useState(false);
     const [content, setContent] = useState('');
     const [showAllComments, setShowAllComments] = useState(false);
+    const [showRepliesMap, setShowRepliesMap] = useState<Record<string, boolean>>({});
 
     const handleSubmit = async (_: any, formData: FormData) => {
         const error = await submitComment(formData);
@@ -107,61 +108,21 @@ export default function Comments({
             ) : (
                 comments &&
                 comments.slice(0, showAllComments ? comments.length : INITIAL_COMMENTS_TO_SHOW).map((comment) => (
-                    <div key={comment.id} className="bg-base-200 border-base-300 rounded-box p-4 w-full">
-                        <div key={comment.id} className="flex flex-col gap-1 w-full">
-                            <div className="flex justify-between items-center">
-                                <div className="flex gap-4 items-center">
-                                    <span className="font-bold">
-                                        {comment.userData.firstName
-                                            ? comment.userData.firstName +
-                                              ' ' +
-                                              (comment.userData.lastName?.slice(0, 1) || '')
-                                            : comment.userData.username}
-                                    </span>
-                                    <span className="text-base-content/25 text-sm">
-                                        {(comment.updatedAt !== comment.createdAt ? 'edited:' : '') + ' '}
-                                        {timeAgo(comment.updatedAt)}
-                                    </span>
-                                </div>
-                                {(user?.id === comment.userData.userId || user?.roles?.includes('admin')) && (
-                                    <div className="dropdown dropdown-left">
-                                        <div role="button" className="btn btn-ghost btn-square btn-sm" tabIndex={0}>
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={1.5}
-                                                stroke="currentColor"
-                                                className="size-6"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <ul
-                                            tabIndex={0}
-                                            className="dropdown-content menu menu-sm bg-base-100 rounded-box z-1 shadow-sm"
-                                        >
-                                            <li>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        (document.activeElement as any).blur();
-                                                        deleteComment(comment.id);
-                                                    }}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                )}
+                    <div key={comment.id} className="w-full flex flex-col gap-4">
+                        <Comment comment={comment} user={user} setShowRepliesMap={setShowRepliesMap} />
+                        {showRepliesMap[comment.id] && comment.replies.length > 0 && (
+                            <div className="ml-8 pl-8">
+                                <textarea className="textarea w-full [field-sizing:content] mb-4 !min-h-[4rem]" />
+                                {comment.replies.map((reply) => (
+                                    <Comment
+                                        key={reply.id}
+                                        comment={reply}
+                                        user={user}
+                                        setShowRepliesMap={setShowRepliesMap}
+                                    />
+                                ))}
                             </div>
-                            <p>{comment.content}</p>
-                        </div>
+                        )}
                     </div>
                 ))
             )}
