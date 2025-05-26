@@ -2,7 +2,7 @@
 
 import PostContent from '@/components/post/PostContent';
 import PostNavigationButtons from '@/components/post/PostNavigationButtons';
-import Comments from '@/components/post/Comments';
+import Comments from '@/components/comments/Comments';
 import { Post, User } from '@/lib/types';
 
 interface PostContainerProps {

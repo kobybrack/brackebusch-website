@@ -3,24 +3,22 @@ import { timeAgo } from '@/lib/miscHelpers';
 import { useDeleteComment, useSubmitComment } from '@/hooks/commentHooks';
 import { useState } from 'react';
 import { set } from 'zod';
+import CommentTextBox from './CommentTextBox';
+import { writeTurborepoAccessTraceResult } from 'next/dist/build/turborepo-access-trace';
 
 export default function CommentComponent({
     comment,
     user,
     setShowRepliesMap,
+    setShowTopWriteReply,
 }: {
     comment: CommentType;
     user: User | undefined;
     setShowRepliesMap: (prev: any) => void;
+    setShowTopWriteReply: (prev: any) => void;
 }) {
     const { deleteComment } = useDeleteComment(comment.postId);
-    const { submitComment } = useSubmitComment(comment.postId);
-
     const [writeReply, setWriteReply] = useState(false);
-
-    const [isFocused, setIsFocused] = useState(false);
-    const [cancelled, setCancelled] = useState(false);
-    const [content, setContent] = useState('');
 
     return (
         <div>
@@ -100,7 +98,23 @@ export default function CommentComponent({
                                 {Math.floor((Math.random() * 1000) / 9)}
                             </span>
                         </div>
-                        <button className="btn btn-sm btn-ghost" onClick={() => setWriteReply((prev) => !prev)}>
+                        <button
+                            className="btn btn-sm btn-ghost"
+                            onClick={() => {
+                                if (comment.parentCommentId) {
+                                    setWriteReply((prev) => !prev);
+                                } else {
+                                    setShowRepliesMap((prev: any) => ({
+                                        ...prev,
+                                        [comment.id]: true,
+                                    }));
+                                    setShowTopWriteReply((prev: any) => ({
+                                        ...prev,
+                                        [comment.id]: !prev[comment.id],
+                                    }));
+                                }
+                            }}
+                        >
                             Reply
                         </button>
                     </div>
@@ -118,24 +132,11 @@ export default function CommentComponent({
                 >{`View ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`}</button>
             )}
             {writeReply && (
-                <textarea
-                    className={`textarea w-98/100 [field-sizing:content] m-2 !min-h-[4rem] ${isFocused || !cancelled ? '' : ''}`}
-                    style={{ resize: 'none' }}
-                    placeholder={'Write your reply...'}
-                    disabled={!user}
-                    name="content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    onFocus={() => {
-                        setIsFocused(true);
-                        setCancelled(false);
-                    }}
-                    onBlur={(e) => {
-                        if (e.relatedTarget && e.relatedTarget.tagName === 'BUTTON') {
-                            return;
-                        }
-                        setIsFocused(false);
-                    }}
+                <CommentTextBox
+                    user={user}
+                    postId={comment.postId}
+                    postKey={''}
+                    closeReply={() => setWriteReply(false)}
                 />
             )}
         </div>
