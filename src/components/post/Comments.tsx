@@ -108,11 +108,10 @@ export default function Comments({
             ) : (
                 comments &&
                 comments.slice(0, showAllComments ? comments.length : INITIAL_COMMENTS_TO_SHOW).map((comment) => (
-                    <div key={comment.id} className="w-full flex flex-col gap-4">
+                    <div key={comment.id} className="w-full flex flex-col gap-2">
                         <Comment comment={comment} user={user} setShowRepliesMap={setShowRepliesMap} />
                         {showRepliesMap[comment.id] && comment.replies.length > 0 && (
-                            <div className="ml-8 pl-8">
-                                <textarea className="textarea w-full [field-sizing:content] mb-4 !min-h-[4rem]" />
+                            <div className="ml-6 pl-6">
                                 {comment.replies.map((reply) => (
                                     <Comment
                                         key={reply.id}
