@@ -11,7 +11,7 @@ export default function PostEditor() {
     const [postId, setPostId] = useState<string | undefined>(undefined);
     const submitModalRef = useRef<HTMLDialogElement | null>(null);
 
-    const handleSubmit = async (_: any, formData: FormData) => {
+    const handleSubmit = async (_: unknown, formData: FormData) => {
         reset();
         submitModalRef.current?.showModal();
         const postOrError = await submitPost(formData);
@@ -51,8 +51,8 @@ export default function PostEditor() {
         if (event.ctrlKey) {
             let markdown;
             const target = event.target as HTMLTextAreaElement;
-            let start = target.selectionStart;
-            let end = target.selectionEnd;
+            const start = target.selectionStart;
+            const end = target.selectionEnd;
             const subString = text.substring(start, end);
 
             let markdownLength = 0;
@@ -154,7 +154,7 @@ export default function PostEditor() {
                 <div className="tab-content" role="tabpanel">
                     <div className="border border-base-300 rounded-box p-6 prose w-full">
                         <h1>{title}</h1>
-                        <Markdown children={text} />
+                        <Markdown>{text}</Markdown>
                     </div>
                 </div>
             </div>

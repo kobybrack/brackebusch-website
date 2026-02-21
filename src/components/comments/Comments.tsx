@@ -50,6 +50,7 @@ export default function Comments({
                                         closeReply={() =>
                                             setShowWriteReply((prev) => ({ ...prev, [comment.id]: false }))
                                         }
+                                        parentCommentId={comment.id}
                                     />
                                 )}
                                 {comment.replies.map((reply) => (

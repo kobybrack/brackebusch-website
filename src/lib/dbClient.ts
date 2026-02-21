@@ -1,5 +1,5 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
-import { Post, User, Comment } from './types';
+import { Post, User, Comment, UpdateUserBody } from './types';
 
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
@@ -471,14 +471,7 @@ class DbClient {
         return user;
     }
 
-    async updateUser(updateUserBody: {
-        email: string;
-        username: string;
-        firstName: string;
-        lastName: string;
-        userPreferences: { postNotifications: boolean; missionNotifications: boolean };
-        roleCode?: string;
-    }): Promise<User & { roleAdded: boolean }> {
+    async updateUser(updateUserBody: UpdateUserBody): Promise<User & { roleAdded: boolean }> {
         const { email, username, firstName, lastName, userPreferences, roleCode } = updateUserBody;
         const { postNotifications, missionNotifications } = userPreferences;
         let rows = await this.client(`SELECT email from users where username = $1;`, [username]);

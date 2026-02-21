@@ -135,7 +135,7 @@ export default function CommentComponent({
                     postId={comment.postId}
                     postKey={''}
                     closeReply={() => setWriteReply(false)}
-                    parentCommentId={comment.id}
+                    parentCommentId={comment.parentCommentId || comment.id}
                 />
             )}
         </div>

@@ -23,6 +23,14 @@ export interface User {
         missionNotifications: boolean;
     };
 }
+export interface UpdateUserBody {
+    email: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    userPreferences: { postNotifications: boolean; missionNotifications: boolean };
+    roleCode?: string;
+}
 export interface Comment {
     id: string;
     postId: string;
