@@ -1,12 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import { timeAgo } from '@/lib/miscHelpers';
-import { useActionState, useState } from 'react';
-import { useDeleteComment, useGetComments, useSubmitComment } from '@/hooks/commentHooks';
+import { useState } from 'react';
+import { useGetComments } from '@/hooks/commentHooks';
 import LoadingSpinnerWithText from '../LoadingSpinnerWithText';
 import { User } from '@/lib/types';
-import useResettableActionState from '@/hooks/useResettableActionState';
 import Comment from '@/components/comments/Comment';
 import CommentTextBox from './CommentTextBox';
 

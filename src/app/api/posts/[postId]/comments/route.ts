@@ -17,13 +17,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pos
     const { postId } = await params;
     const formData = await request.formData();
     const content = formData.get('content') as string;
+    const parentCommentId = formData.get('parent_comment_id') as string | null;
 
     if (!postId || !content || !userId) {
         return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const comment = await dbClient.insertComment(postId, userId, content);
-    setTimeout(() => getPostAndSendCommentEmail(postId), 0);
+    const comment = await dbClient.insertComment(postId, userId, content, parentCommentId);
     return Response.json({ comment });
 }
 

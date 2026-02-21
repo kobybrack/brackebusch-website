@@ -1,5 +1,6 @@
 import { useSubmitComment } from '@/hooks/commentHooks';
 import useResettableActionState from '@/hooks/useResettableActionState';
+import { User } from '@/lib/types';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -8,14 +9,16 @@ export default function CommentTextBox({
     user,
     postKey,
     closeReply,
+    parentCommentId,
 }: {
     postId: string;
-    user: any;
+    user: User | undefined;
     postKey: string;
     closeReply?: () => void;
+    parentCommentId?: string;
 }) {
     const { submitComment } = useSubmitComment(postId);
-    const handleSubmit = async (_: any, formData: FormData) => {
+    const handleSubmit = async (_: unknown, formData: FormData) => {
         const error = await submitComment(formData);
         if (error) {
             return error;
@@ -33,6 +36,7 @@ export default function CommentTextBox({
 
     return (
         <form className="w-full flex flex-col justify-start gap-4" action={formAction}>
+            <input type="hidden" name="parent_comment_id" value={parentCommentId} />
             <div>
                 <textarea
                     className={`textarea w-full [field-sizing:content] mb-4 !min-h-[4rem] ${isFocused || !cancelled ? '' : ''}`}
@@ -65,7 +69,7 @@ export default function CommentTextBox({
                                         setCancelled(true);
                                         setContent('');
                                         reset();
-                                        closeReply && closeReply();
+                                        if (closeReply) closeReply();
                                     }}
                                     disabled={isPending}
                                 >

@@ -20,9 +20,9 @@ const htmlStyles = {
     padding: 0,
     height: '100dvh',
     display: 'flex',
-    flexDirection: 'column' as 'column',
+    flexDirection: 'column',
     overflow: 'auto',
-};
+} as const;
 
 const bodyStyles = {
     ...htmlStyles,

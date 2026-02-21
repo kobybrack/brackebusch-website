@@ -16,7 +16,7 @@ export default function About() {
                     </li>
                     <li>I love music so much, which has led me to learning a lot of instruments</li>
                     <li>I work as a software engineer</li>
-                    <li>I'm 5'8"</li>
+                    <li>I&apos;m 5&apos;8&quot;</li>
                     <li>I have ADHD, which is apparently not surprising to some</li>
                 </ul>
                 <h2 className="mt-0">This website</h2>

@@ -1,7 +1,7 @@
 import { Client } from '@microsoft/microsoft-graph-client';
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import { ClientSecretCredential } from '@azure/identity';
-import { Post, User } from './types';
+import { Post } from './types';
 
 const tenantId = process.env.GRAPH_TENANT_ID;
 const clientId = process.env.GRAPH_CLIENT_ID;

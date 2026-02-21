@@ -250,11 +250,16 @@ class DbClient {
         return Object.values(commentMap);
     }
 
-    async insertComment(postId: string, userId: string, content: string): Promise<Comment> {
+    async insertComment(
+        postId: string,
+        userId: string,
+        content: string,
+        parentCommentId: string | null,
+    ): Promise<Comment> {
         const query = `
         WITH inserted_comment AS (
-            INSERT INTO comments (post_id, user_id, content)
-            VALUES ($1, $2, $3)
+            INSERT INTO comments (post_id, user_id, content, parent_comment_id)
+            VALUES ($1, $2, $3, $4)
             RETURNING *
         )
         SELECT 
@@ -271,7 +276,7 @@ class DbClient {
             inserted_comment.user_id = users.id;
         `;
 
-        const rows = await this.client(query, [postId, userId, content]);
+        const rows = await this.client(query, [postId, userId, content, parentCommentId]);
         if (rows.length !== 1) {
             throw new Error('0 or Multiple rows returned when inserting comment');
         }
@@ -282,6 +287,7 @@ class DbClient {
             content: row.content,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
+            parentCommentId: row.parent_comment_id,
             userData: {
                 userId: row.user_id,
                 firstName: row.first_name,
@@ -465,7 +471,14 @@ class DbClient {
         return user;
     }
 
-    async updateUser(updateUserBody: any): Promise<User & { roleAdded: boolean }> {
+    async updateUser(updateUserBody: {
+        email: string;
+        username: string;
+        firstName: string;
+        lastName: string;
+        userPreferences: { postNotifications: boolean; missionNotifications: boolean };
+        roleCode?: string;
+    }): Promise<User & { roleAdded: boolean }> {
         const { email, username, firstName, lastName, userPreferences, roleCode } = updateUserBody;
         const { postNotifications, missionNotifications } = userPreferences;
         let rows = await this.client(`SELECT email from users where username = $1;`, [username]);

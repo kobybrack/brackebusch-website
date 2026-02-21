@@ -1,4 +1,4 @@
-import NextAuth, { type DefaultSession } from 'next-auth';
+import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { User as MyUserType } from './lib/types';
 

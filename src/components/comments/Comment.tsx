@@ -1,10 +1,8 @@
 import { Comment as CommentType, User } from '@/lib/types';
 import { timeAgo } from '@/lib/miscHelpers';
-import { useDeleteComment, useSubmitComment } from '@/hooks/commentHooks';
-import { useState } from 'react';
-import { set } from 'zod';
+import { useDeleteComment } from '@/hooks/commentHooks';
+import { useState, Dispatch, SetStateAction } from 'react';
 import CommentTextBox from './CommentTextBox';
-import { writeTurborepoAccessTraceResult } from 'next/dist/build/turborepo-access-trace';
 
 export default function CommentComponent({
     comment,
@@ -14,8 +12,8 @@ export default function CommentComponent({
 }: {
     comment: CommentType;
     user: User | undefined;
-    setShowRepliesMap: (prev: any) => void;
-    setShowTopWriteReply: (prev: any) => void;
+    setShowRepliesMap: Dispatch<SetStateAction<Record<string, boolean>>>;
+    setShowTopWriteReply: Dispatch<SetStateAction<Record<string, boolean>>>;
 }) {
     const { deleteComment } = useDeleteComment(comment.postId);
     const [writeReply, setWriteReply] = useState(false);
@@ -63,7 +61,7 @@ export default function CommentComponent({
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    (document.activeElement as any).blur();
+                                                    (document.activeElement as HTMLElement).blur();
                                                     deleteComment(comment.id);
                                                 }}
                                             >
@@ -85,7 +83,7 @@ export default function CommentComponent({
                                     viewBox="0 0 24 24"
                                     strokeWidth={1.5}
                                     stroke="none"
-                                    className={`size-5 shrink-0 ${true ? 'stroke-accent fill-accent' : 'stroke-error fill-error'}`}
+                                    className={`size-5 shrink-0 'stroke-accent fill-accent'`}
                                 >
                                     <path
                                         strokeLinecap="round"
@@ -104,11 +102,11 @@ export default function CommentComponent({
                                 if (comment.parentCommentId) {
                                     setWriteReply((prev) => !prev);
                                 } else {
-                                    setShowRepliesMap((prev: any) => ({
+                                    setShowRepliesMap((prev) => ({
                                         ...prev,
                                         [comment.id]: true,
                                     }));
-                                    setShowTopWriteReply((prev: any) => ({
+                                    setShowTopWriteReply((prev) => ({
                                         ...prev,
                                         [comment.id]: !prev[comment.id],
                                     }));
@@ -124,7 +122,7 @@ export default function CommentComponent({
                 <button
                     className="btn btn-ghost btn-sm mt-2"
                     onClick={() =>
-                        setShowRepliesMap((prev: any) => ({
+                        setShowRepliesMap((prev) => ({
                             ...prev,
                             [comment.id]: !prev[comment.id],
                         }))
@@ -137,6 +135,7 @@ export default function CommentComponent({
                     postId={comment.postId}
                     postKey={''}
                     closeReply={() => setWriteReply(false)}
+                    parentCommentId={comment.id}
                 />
             )}
         </div>

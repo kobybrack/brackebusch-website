@@ -1,4 +1,4 @@
-import { auth, signOut } from '@/auth';
+import { auth } from '@/auth';
 import LoadingSpinnerWithText from '@/components/LoadingSpinnerWithText';
 import PostsList from '@/components/post/PostsList';
 import dbClient from '@/lib/dbClient';
@@ -17,7 +17,7 @@ export default async function Missions() {
     if (!hasMissionAccess) {
         return (
             <div className="flex flex-col justify-center items-center">
-                You don't have access to this page.
+                You don&apos;t have access to this page.
                 <br />
                 If you think this is a mistake, please contact Koby.
             </div>

@@ -10,17 +10,17 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
     const [user, setUser] = useState(initialUser);
     const { update } = useSession();
 
-    const updateUserAction = async (_: any, formData: any) => {
+    const updateUserAction = async (_: unknown, formData: FormData) => {
         const updateUserBody = {
-            email: formData.get('email'),
-            username: formData.get('username'),
-            firstName: formData.get('first_name'),
-            lastName: formData.get('last_name'),
+            email: formData.get('email') as string,
+            username: formData.get('username') as string,
+            firstName: formData.get('first_name') as string,
+            lastName: formData.get('last_name') as string,
             userPreferences: {
                 postNotifications: formData.get('post_notifications') === 'on',
                 missionNotifications: formData.get('mission_notifications') === 'on',
             },
-            roleCode: formData.get('role_code'),
+            roleCode: (formData.get('role_code') as string) || undefined,
         };
         setUser((prevUser) => ({
             ...prevUser,
@@ -104,7 +104,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                                 className="checkbox"
                                 defaultChecked={user.userPreferences?.postNotifications}
                             />
-                            <p>Email me when there's a new post</p>
+                            <p>Email me when there&apos;s a new post</p>
                         </label>
                         {user.roles?.includes('missions') && (
                             <label className="label">
@@ -115,7 +115,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                                     defaultChecked={user.userPreferences?.missionNotifications}
                                 />
                                 <p>
-                                    Email me when there's a new <em>mission</em> post
+                                    Email me when there&apos;s a new <em>mission</em> post
                                 </p>
                             </label>
                         )}
