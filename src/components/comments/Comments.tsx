@@ -21,7 +21,6 @@ export default function Comments({
     const { data: comments, isLoading } = useGetComments(postId);
 
     const [showAllComments, setShowAllComments] = useState(false);
-    const [showRepliesMap, setShowRepliesMap] = useState<Record<string, boolean>>({});
     const [showWriteReply, setShowWriteReply] = useState<Record<string, boolean>>({});
 
     return (
@@ -34,36 +33,27 @@ export default function Comments({
                 comments &&
                 comments.slice(0, showAllComments ? comments.length : INITIAL_COMMENTS_TO_SHOW).map((comment) => (
                     <div key={comment.id} className="w-full flex flex-col gap-2">
-                        <Comment
-                            comment={comment}
-                            user={user}
-                            setShowRepliesMap={setShowRepliesMap}
-                            setShowTopWriteReply={setShowWriteReply}
-                        />
-                        {showRepliesMap[comment.id] && comment.replies.length > 0 && (
-                            <div className="ml-12">
-                                {showWriteReply[comment.id] && (
-                                    <CommentTextBox
-                                        postId={postId}
-                                        user={user}
-                                        postKey={postKey}
-                                        closeReply={() =>
-                                            setShowWriteReply((prev) => ({ ...prev, [comment.id]: false }))
-                                        }
-                                        parentCommentId={comment.id}
-                                    />
-                                )}
-                                {comment.replies.map((reply) => (
+                        <Comment comment={comment} user={user} setShowTopWriteReply={setShowWriteReply} />
+                        <div className="ml-12">
+                            {showWriteReply[comment.id] && (
+                                <CommentTextBox
+                                    postId={postId}
+                                    user={user}
+                                    postKey={postKey}
+                                    closeReply={() => setShowWriteReply((prev) => ({ ...prev, [comment.id]: false }))}
+                                    parentCommentId={comment.id}
+                                />
+                            )}
+                            {comment.replies.length > 0 &&
+                                comment.replies.map((reply) => (
                                     <Comment
                                         key={reply.id}
                                         comment={reply}
                                         user={user}
-                                        setShowRepliesMap={setShowRepliesMap}
                                         setShowTopWriteReply={setShowWriteReply}
                                     />
                                 ))}
-                            </div>
-                        )}
+                        </div>
                     </div>
                 ))
             )}

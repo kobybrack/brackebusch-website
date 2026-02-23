@@ -32,10 +32,18 @@ export function useSubmitComment(postId: string) {
             if (!response.ok) {
                 return 'Failed to submit comment';
             }
+
             const data = await response.json();
-            queryClient.setQueryData(['comments', postId], (oldData: Comment[] | undefined) => {
-                if (!oldData) return [];
-                return [data.comment, ...oldData];
+            queryClient.setQueryData(['comments', postId], (oldData: Comment[] = []) => {
+                const { comment } = data;
+
+                if (!comment.parentCommentId) {
+                    return [comment, ...oldData];
+                }
+
+                return oldData.map((c) =>
+                    c.id === comment.parentCommentId ? { ...c, replies: [...(c.replies || []), comment] } : c,
+                );
             });
         },
     });
@@ -59,8 +67,7 @@ export function useDeleteComment(postId: string) {
             if (!response.ok) {
                 return 'Failed to delete comment';
             }
-            queryClient.setQueryData(['comments', postId], (oldData: Comment[] | undefined) => {
-                if (!oldData) return [];
+            queryClient.setQueryData(['comments', postId], (oldData: Comment[] = []) => {
                 return oldData.filter((comment) => comment.id !== commentId);
             });
         },

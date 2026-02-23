@@ -206,7 +206,7 @@ class DbClient {
     async getComments(postId: string): Promise<Comment[]> {
         const query = `
             SELECT 
-                c.id, c.post_id, c.content, c.created_at, c.updated_at, c.parent_comment_id,
+                c.id, c.post_id, c.content, c.created_at, c.updated_at, c.deleted_at, c.parent_comment_id,
                 u.id AS user_id, u.first_name, u.last_name, u.username
             FROM 
                 comments c
@@ -224,12 +224,13 @@ class DbClient {
         const commentMap: Record<string, Comment> = {};
 
         rows.forEach((row) => {
-            const comment = {
+            commentMap[row.id] = {
                 id: row.id,
                 postId: row.post_id,
                 content: row.content,
                 createdAt: row.created_at,
                 updatedAt: row.updated_at,
+                deletedAt: row.deleted_at,
                 parentCommentId: row.parent_comment_id,
                 userData: {
                     userId: row.user_id,
@@ -239,15 +240,27 @@ class DbClient {
                 },
                 replies: [],
             };
+        });
 
+        const rootComments: Comment[] = [];
+        rows.forEach((row) => {
+            const comment = commentMap[row.id];
             if (row.parent_comment_id && commentMap[row.parent_comment_id]) {
                 commentMap[row.parent_comment_id].replies.push(comment);
-            } else {
-                commentMap[row.id] = comment;
+            } else if (!row.parent_comment_id) {
+                rootComments.push(comment);
             }
         });
 
-        return Object.values(commentMap);
+        const filterNodes = (list: Comment[]): Comment[] => {
+            return list.filter((c) => {
+                c.replies = filterNodes(c.replies);
+                // Keep if: Not deleted OR has at least one reply
+                return !c.deletedAt || c.replies.length > 0;
+            });
+        };
+
+        return filterNodes(rootComments);
     }
 
     async insertComment(
@@ -287,6 +300,7 @@ class DbClient {
             content: row.content,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
+            deletedAt: row.deleted_at,
             parentCommentId: row.parent_comment_id,
             userData: {
                 userId: row.user_id,
@@ -299,7 +313,7 @@ class DbClient {
     }
 
     async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
-        let query = `DELETE FROM comments WHERE id = $1`;
+        let query = `UPDATE comments SET deleted_at = NOW() WHERE id = $1`;
         const params = [commentId];
 
         if (!isAdmin) {

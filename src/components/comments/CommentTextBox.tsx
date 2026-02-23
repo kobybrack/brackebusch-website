@@ -2,7 +2,7 @@ import { useSubmitComment } from '@/hooks/commentHooks';
 import useResettableActionState from '@/hooks/useResettableActionState';
 import { User } from '@/lib/types';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function CommentTextBox({
     postId,
@@ -32,14 +32,25 @@ export default function CommentTextBox({
     const [cancelled, setCancelled] = useState(false);
     const [content, setContent] = useState('');
 
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        const textarea = textareaRef.current as HTMLTextAreaElement | null;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [content]);
+
     const textAreaPlaceHolder = user ? 'Write a comment!' : 'Log in to comment!';
 
     return (
         <form className="w-full flex flex-col justify-start gap-4" action={formAction}>
-            <input type="hidden" name="parent_comment_id" value={parentCommentId} />
+            {parentCommentId && <input type="hidden" name="parent_comment_id" value={parentCommentId} />}
             <div>
                 <textarea
-                    className={`textarea w-full [field-sizing:content] mb-4 !min-h-[4rem] ${isFocused || !cancelled ? '' : ''}`}
+                    ref={textareaRef}
+                    className={`textarea w-full mb-4 !min-h-[4rem] overflow-hidden ${isFocused || !cancelled ? '' : ''}`}
                     style={{ resize: 'none' }}
                     placeholder={textAreaPlaceHolder}
                     disabled={!user}
@@ -61,7 +72,7 @@ export default function CommentTextBox({
                     {errorMessage && <span className="text-sm text-error">{errorMessage}</span>}
                     {user ? (
                         <div className="flex justify-end gap-2">
-                            {content && (
+                            {(content || parentCommentId) && (
                                 <button
                                     type="button"
                                     className={`btn btn-sm btn-ghost`}

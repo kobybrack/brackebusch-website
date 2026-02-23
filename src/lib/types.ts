@@ -36,6 +36,7 @@ export interface Comment {
     postId: string;
     createdAt: string;
     updatedAt: string;
+    deletedAt: string | null;
     content: string;
     userData: {
         userId: string;
