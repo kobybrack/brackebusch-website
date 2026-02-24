@@ -82,27 +82,6 @@ export default function CommentComponent({
                         </div>
                         <p>{comment.content}</p>
                         <div className="flex justify-start items-center gap-1 h-[30px]">
-                            <div className="flex flex-row items-center gap-1">
-                                <button className="btn btn-sm btn-square">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="#C76666"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth={1.5}
-                                        stroke="#5A2626"
-                                        className="size-5 shrink-0"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                                        />
-                                    </svg>
-                                </button>
-                                <span className="w-[20px] text-center text-sm">
-                                    {Math.floor((Math.random() * 1000) / 9)}
-                                </span>
-                            </div>
                             {!comment.parentCommentId && (
                                 <button
                                     className="btn btn-sm btn-ghost"
@@ -147,6 +126,7 @@ export default function CommentComponent({
                     postId={comment.postId}
                     postKey={''}
                     closeReplyTextbox={() => setShowReplyTextbox(false)}
+                    openReplies={() => {}}
                     parentCommentId={comment.parentCommentId || comment.id}
                 />
             )}
