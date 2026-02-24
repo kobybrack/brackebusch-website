@@ -21,39 +21,59 @@ export default function Comments({
     const { data: comments, isLoading } = useGetComments(postId);
 
     const [showAllComments, setShowAllComments] = useState(false);
-    const [showWriteReply, setShowWriteReply] = useState<Record<string, boolean>>({});
+    const [showRepliesMap, setShowRepliesMap] = useState<Record<string, boolean>>({});
+    const [showReplyTextboxMap, setShowReplyTextboxMap] = useState<Record<string, boolean>>({});
 
     return (
         <div className="flex flex-col gap-4 justify-start items-center w-full mb-8">
             <div className="divider font-bold">Comments</div>
-            <CommentTextBox postId={postId} user={user} postKey={postKey} />
+            <CommentTextBox
+                postId={postId}
+                user={user}
+                postKey={postKey}
+                closeReplyTextbox={() => {}}
+                openReplies={() => {}}
+            />
             {isLoading ? (
                 <LoadingSpinnerWithText loadingText={'Loading comments...'} />
             ) : (
                 comments &&
                 comments.slice(0, showAllComments ? comments.length : INITIAL_COMMENTS_TO_SHOW).map((comment) => (
-                    <div key={comment.id} className="w-full flex flex-col gap-2">
-                        <Comment comment={comment} user={user} setShowTopWriteReply={setShowWriteReply} />
-                        <div className="ml-12">
-                            {showWriteReply[comment.id] && (
-                                <CommentTextBox
-                                    postId={postId}
-                                    user={user}
-                                    postKey={postKey}
-                                    closeReply={() => setShowWriteReply((prev) => ({ ...prev, [comment.id]: false }))}
-                                    parentCommentId={comment.id}
-                                />
-                            )}
-                            {comment.replies.length > 0 &&
-                                comment.replies.map((reply) => (
-                                    <Comment
-                                        key={reply.id}
-                                        comment={reply}
+                    <div key={comment.id} className="w-full flex flex-col gap-4">
+                        <Comment
+                            comment={comment}
+                            user={user}
+                            setShowParentReplyTextbox={setShowReplyTextboxMap}
+                            showRepliesMap={showRepliesMap}
+                            setShowRepliesMap={setShowRepliesMap}
+                        />
+                        {(showReplyTextboxMap[comment.id] || showRepliesMap[comment.id]) && (
+                            <div className="ml-16 flex flex-col gap-4">
+                                {showReplyTextboxMap[comment.id] && (
+                                    <CommentTextBox
+                                        postId={postId}
                                         user={user}
-                                        setShowTopWriteReply={setShowWriteReply}
+                                        postKey={postKey}
+                                        closeReplyTextbox={() =>
+                                            setShowReplyTextboxMap((prev) => ({ ...prev, [comment.id]: false }))
+                                        }
+                                        openReplies={() =>
+                                            setShowRepliesMap((prev) => ({ ...prev, [comment.id]: true }))
+                                        }
+                                        parentCommentId={comment.id}
                                     />
-                                ))}
-                        </div>
+                                )}
+                                {showRepliesMap[comment.id] &&
+                                    comment.replies.map((reply) => (
+                                        <Comment
+                                            key={reply.id}
+                                            comment={reply}
+                                            user={user}
+                                            setShowParentReplyTextbox={setShowReplyTextboxMap}
+                                        />
+                                    ))}
+                            </div>
+                        )}
                     </div>
                 ))
             )}

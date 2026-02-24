@@ -13,7 +13,7 @@ class DbClient {
         this.client = neon(`${process.env.DATABASE_URL}`);
     }
 
-    async getPostFromId(postId: string) {
+    async getPostById(postId: string) {
         const query = `
             SELECT *
             FROM posts
@@ -203,6 +203,49 @@ class DbClient {
         return post;
     }
 
+    async getCommentById(commentId?: string): Promise<Comment | undefined> {
+        if (!commentId) {
+            return undefined;
+        }
+
+        const query = `
+            SELECT 
+                c.id, c.post_id, c.content, c.created_at, c.updated_at, c.deleted_at, c.parent_comment_id,
+                u.id AS user_id, u.first_name, u.last_name, u.username, u.email
+            FROM 
+                comments c
+            INNER JOIN 
+                users u
+            ON 
+                c.user_id = u.id
+            WHERE 
+                c.id = $1
+        `;
+        const rows = await this.client(query, [commentId]);
+        if (rows.length !== 1 || rows[0].deleted_at) {
+            return undefined;
+        }
+        const row = rows[0];
+        const comment: Comment = {
+            id: row.id,
+            postId: row.post_id,
+            content: row.content,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            deletedAt: row.deleted_at,
+            parentCommentId: row.parent_comment_id,
+            userData: {
+                userId: row.user_id,
+                firstName: row.first_name,
+                lastName: row.last_name,
+                username: row.username,
+                email: row.email,
+            },
+            replies: [],
+        };
+        return comment;
+    }
+
     async getComments(postId: string): Promise<Comment[]> {
         const query = `
             SELECT 
@@ -217,7 +260,7 @@ class DbClient {
             WHERE 
                 c.post_id = $1
             ORDER BY 
-                c.parent_comment_id IS NULL DESC, c.id ASC;
+                c.parent_comment_id IS NULL DESC, c.id DESC;
         `;
 
         const rows = await this.client(query, [postId]);

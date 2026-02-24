@@ -7,18 +7,22 @@ import CommentTextBox from './CommentTextBox';
 export default function CommentComponent({
     comment,
     user,
-    setShowTopWriteReply,
+    setShowParentReplyTextbox,
+    showRepliesMap,
+    setShowRepliesMap,
 }: {
     comment: CommentType;
     user: User | undefined;
-    setShowTopWriteReply: Dispatch<SetStateAction<Record<string, boolean>>>;
+    setShowParentReplyTextbox: Dispatch<SetStateAction<Record<string, boolean>>>;
+    showRepliesMap?: Record<string, boolean>;
+    setShowRepliesMap?: Dispatch<SetStateAction<Record<string, boolean>>>;
 }) {
     const { deleteComment } = useDeleteComment(comment.postId);
-    const [writeReply, setWriteReply] = useState(false);
+    const [showReplyTextbox, setShowReplyTextbox] = useState(false);
 
     return (
         <div>
-            <div className="bg-base-200 rounded-box p-4">
+            <div id={`comment-${comment.id}`} className="bg-base-200 rounded-box p-4">
                 {comment.deletedAt ? (
                     <span className="text-base-content/25 italic">this comment was deleted</span>
                 ) : (
@@ -65,7 +69,7 @@ export default function CommentComponent({
                                                     type="button"
                                                     onClick={() => {
                                                         (document.activeElement as HTMLElement).blur();
-                                                        deleteComment(comment.id);
+                                                        deleteComment(comment);
                                                     }}
                                                 >
                                                     Delete
@@ -99,42 +103,50 @@ export default function CommentComponent({
                                     {Math.floor((Math.random() * 1000) / 9)}
                                 </span>
                             </div>
-                            <button
-                                className="btn btn-sm btn-ghost"
-                                onClick={() => {
-                                    if (comment.parentCommentId) {
-                                        setWriteReply((prev) => !prev);
-                                    } else {
-                                        setShowTopWriteReply((prev) => ({
-                                            ...prev,
-                                            [comment.id]: !prev[comment.id],
-                                        }));
-                                    }
-                                }}
-                            >
-                                Reply
-                            </button>
+                            {!comment.parentCommentId && (
+                                <button
+                                    className="btn btn-sm btn-ghost"
+                                    onClick={() => {
+                                        if (comment.parentCommentId) {
+                                            setShowReplyTextbox((prev) => !prev);
+                                        } else {
+                                            setShowParentReplyTextbox((prev) => ({
+                                                ...prev,
+                                                [comment.id]: !prev[comment.id],
+                                            }));
+                                        }
+                                    }}
+                                >
+                                    Reply
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
             </div>
-            {/* {comment.replies.length > 0 && (
+            {comment.replies.length > 0 && (
                 <button
                     className="btn btn-ghost btn-sm mt-2"
-                    onClick={() =>
-                        setShowRepliesMap((prev) => ({
-                            ...prev,
-                            [comment.id]: !prev[comment.id],
-                        }))
-                    }
-                >{`View ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`}</button>
-            )} */}
-            {writeReply && (
+                    onClick={() => {
+                        if (setShowRepliesMap) {
+                            setShowRepliesMap((prev) => ({
+                                ...prev,
+                                [comment.id]: !prev[comment.id],
+                            }));
+                        }
+                    }}
+                >
+                    {showRepliesMap && showRepliesMap[comment.id]
+                        ? `Hide ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`
+                        : `View ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`}
+                </button>
+            )}
+            {showReplyTextbox && (
                 <CommentTextBox
                     user={user}
                     postId={comment.postId}
                     postKey={''}
-                    closeReply={() => setWriteReply(false)}
+                    closeReplyTextbox={() => setShowReplyTextbox(false)}
                     parentCommentId={comment.parentCommentId || comment.id}
                 />
             )}

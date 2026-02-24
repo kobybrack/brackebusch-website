@@ -8,22 +8,38 @@ export default function CommentTextBox({
     postId,
     user,
     postKey,
-    closeReply,
+    closeReplyTextbox,
+    openReplies,
     parentCommentId,
 }: {
     postId: string;
     user: User | undefined;
     postKey: string;
-    closeReply?: () => void;
+    closeReplyTextbox: () => void;
+    openReplies: () => void;
     parentCommentId?: string;
 }) {
     const { submitComment } = useSubmitComment(postId);
     const handleSubmit = async (_: unknown, formData: FormData) => {
-        const error = await submitComment(formData);
-        if (error) {
-            return error;
+        const submitResponse = await submitComment(formData);
+        if (typeof submitResponse === 'string') {
+            return submitResponse;
         }
+
         setContent('');
+        closeReplyTextbox();
+        openReplies();
+
+        setTimeout(() => {
+            document
+                .getElementById(`comment-${submitResponse.id}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+
+        await fetch(`/api/posts/${postId}/comments/${submitResponse.id}/notify`, {
+            method: 'POST',
+            body: JSON.stringify({ parentCommentId }),
+        });
     };
 
     const [errorMessage, formAction, isPending, reset] = useResettableActionState(handleSubmit, null);
@@ -80,7 +96,7 @@ export default function CommentTextBox({
                                         setCancelled(true);
                                         setContent('');
                                         reset();
-                                        if (closeReply) closeReply();
+                                        if (closeReplyTextbox) closeReplyTextbox();
                                     }}
                                     disabled={isPending}
                                 >

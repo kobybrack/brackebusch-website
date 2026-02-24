@@ -56,6 +56,27 @@ class MicrosoftGraphClient {
         }
     }
 
+    public async sendCommentReplyEmail(email: string, post: Post) {
+        const postUrl = `https://www.brackebusch.com/${post.missionPost ? 'missions' : 'posts'}/${post.postKey}`;
+        try {
+            const request = {
+                message: {
+                    subject: 'New Comment',
+                    body: {
+                        contentType: 'HTML',
+                        content: `Someone replied to your comment on "${post.title}"!<br/>
+                            Check it out <a href="${postUrl}">here</a>.`,
+                    },
+                    toRecipients: [{ emailAddress: { address: email } }],
+                },
+            };
+            await this.client.api(`/users/${notificationsEmail}/sendMail`).post(request);
+        } catch (error) {
+            console.error('Error sending emails:', error);
+            throw error;
+        }
+    }
+
     public async sendCommentEmail(post: Post) {
         const postUrl = `https://www.brackebusch.com/${post.missionPost ? 'missions' : 'posts'}/${post.postKey}`;
         try {

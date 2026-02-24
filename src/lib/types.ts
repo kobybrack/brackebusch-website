@@ -42,9 +42,10 @@ export interface Comment {
         userId: string;
         firstName?: string;
         lastName?: string;
+        email?: string;
         username: string;
     };
-    parentCommentId?: string | null;
+    parentCommentId: string | null;
     replies: Comment[];
 }
 
