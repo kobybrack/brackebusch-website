@@ -260,7 +260,9 @@ class DbClient {
             WHERE 
                 c.post_id = $1
             ORDER BY 
-                c.parent_comment_id IS NULL DESC, c.id DESC;
+                c.parent_comment_id IS NULL DESC, 
+                CASE WHEN c.parent_comment_id IS NOT NULL THEN c.id ELSE NULL END ASC,
+                CASE WHEN c.parent_comment_id IS NULL THEN c.id ELSE NULL END DESC;
         `;
 
         const rows = await this.client(query, [postId]);
