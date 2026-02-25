@@ -7,7 +7,7 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default defineConfig([
     {
-        ignores: ['.next/*', 'next-env.d.ts'],
+        ignores: ['.next/*', 'next-env.d.ts', 'tailwind.config.ts'],
     },
     {
         files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
