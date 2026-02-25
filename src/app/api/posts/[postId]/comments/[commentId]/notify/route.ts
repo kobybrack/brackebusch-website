@@ -11,15 +11,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ pos
     const { postId } = await params;
     const { parentCommentId } = (await request.json()) as { parentCommentId?: string };
 
-    const [post, parentComment] = await Promise.all([
+    const [post, parentCommentUser] = await Promise.all([
         dbClient.getPostById(postId),
-        dbClient.getCommentById(parentCommentId),
+        dbClient.getCommentUser(parentCommentId),
     ]);
 
     const emailPromises = [];
 
-    if (parentComment && post) {
-        emailPromises.push(microsoftGraphClient.sendCommentReplyEmail(parentComment.userData.email!, post));
+    if (post && parentCommentUser && parentCommentUser.userPreferences?.replyNotifications) {
+        emailPromises.push(microsoftGraphClient.sendCommentReplyEmail(parentCommentUser.email!, post));
     }
 
     if (post) {

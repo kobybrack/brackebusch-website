@@ -19,6 +19,7 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
             userPreferences: {
                 postNotifications: formData.get('post_notifications') === 'on',
                 missionNotifications: formData.get('mission_notifications') === 'on',
+                replyNotifications: formData.get('reply_notifications') === 'on',
             },
             roleCode: (formData.get('role_code') as string) || undefined,
         };
@@ -119,6 +120,15 @@ export default function AccountClientComponent({ initialUser }: { initialUser: U
                                 </p>
                             </label>
                         )}
+                        <label className="label">
+                            <input
+                                name="reply_notifications"
+                                type="checkbox"
+                                className="checkbox"
+                                defaultChecked={user.userPreferences?.replyNotifications}
+                            />
+                            <p>Email me when someone replies to my comment</p>
+                        </label>
                     </div>
                     <button type="submit" className="btn mt-2 max-w-1/2" disabled={isSubmitting}>
                         Save

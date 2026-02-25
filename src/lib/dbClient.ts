@@ -203,47 +203,32 @@ class DbClient {
         return post;
     }
 
-    async getCommentById(commentId?: string): Promise<Comment | undefined> {
+    async getCommentUser(commentId?: string): Promise<Partial<User> | undefined> {
         if (!commentId) {
             return undefined;
         }
 
         const query = `
-            SELECT 
-                c.id, c.post_id, c.content, c.created_at, c.updated_at, c.deleted_at, c.parent_comment_id,
-                u.id AS user_id, u.first_name, u.last_name, u.username, u.email
-            FROM 
-                comments c
-            INNER JOIN 
-                users u
-            ON 
-                c.user_id = u.id
-            WHERE 
-                c.id = $1
+            SELECT u.*, up.post_notifications, up.mission_notifications, up.reply_notifications
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            LEFT JOIN user_preferences up ON u.id = up.user_id
+            WHERE c.id = $1
         `;
         const rows = await this.client(query, [commentId]);
         if (rows.length !== 1 || rows[0].deleted_at) {
             return undefined;
         }
         const row = rows[0];
-        const comment: Comment = {
-            id: row.id,
-            postId: row.post_id,
-            content: row.content,
-            createdAt: row.created_at,
-            updatedAt: row.updated_at,
-            deletedAt: row.deleted_at,
-            parentCommentId: row.parent_comment_id,
-            userData: {
-                userId: row.user_id,
-                firstName: row.first_name,
-                lastName: row.last_name,
-                username: row.username,
-                email: row.email,
+        const user: Partial<User> = {
+            email: row.email,
+            userPreferences: {
+                postNotifications: row.post_notifications,
+                missionNotifications: row.mission_notifications,
+                replyNotifications: row.reply_notifications,
             },
-            replies: [],
         };
-        return comment;
+        return user;
     }
 
     async getComments(postId: string): Promise<Comment[]> {
@@ -379,6 +364,7 @@ class DbClient {
                 u.last_name,
                 up.post_notifications,
                 up.mission_notifications,
+                up.reply_notifications,
                 r.role_name
             FROM users u
             LEFT JOIN user_preferences up ON u.id = up.user_id
@@ -405,6 +391,7 @@ class DbClient {
             userPreferences: {
                 postNotifications: row.post_notifications,
                 missionNotifications: row.mission_notifications,
+                replyNotifications: row.reply_notifications,
             },
         };
     }
@@ -498,7 +485,6 @@ class DbClient {
         `;
 
         const existingUser = await this.client(existingUserQuery, [email]);
-
         if (existingUser.length > 0) {
             throw new Error('A user already exists with this email');
         }
@@ -520,19 +506,23 @@ class DbClient {
             lastName: row.last_name,
         };
 
+        // Set default user preferences
         const userPreferenceInsertQuery = `
-            INSERT INTO user_preferences (user_id, post_notifications)
-            VALUES ($1, $2);
+            INSERT INTO user_preferences (user_id)
+            VALUES ($1);
         `;
 
-        await this.client(userPreferenceInsertQuery, [user.id, true]);
+        await this.client(userPreferenceInsertQuery, [user.id]);
 
-        return { ...user, userPreferences: { postNotifications: true, missionNotifications: false } };
+        return {
+            ...user,
+            userPreferences: { postNotifications: true, missionNotifications: false, replyNotifications: true },
+        };
     }
 
     async updateUser(updateUserBody: UpdateUserBody): Promise<User & { roleAdded: boolean }> {
         const { email, username, firstName, lastName, userPreferences, roleCode } = updateUserBody;
-        const { postNotifications, missionNotifications } = userPreferences;
+        const { postNotifications, missionNotifications, replyNotifications } = userPreferences;
         let rows = await this.client(`SELECT email from users where username = $1;`, [username]);
         if (rows.length > 0 && rows[0].email !== email) {
             throw new Error('This username is taken');
@@ -554,20 +544,20 @@ class DbClient {
 
         rows = await this.client(
             `UPDATE user_preferences
-            SET post_notifications = $1, mission_notifications = $2
-            WHERE user_id = $3
-            RETURNING post_notifications, mission_notifications;`,
-            [postNotifications, missionNotifications, user.id],
+            SET post_notifications = $1, mission_notifications = $2, reply_notifications = $3
+            WHERE user_id = $4
+            RETURNING post_notifications, mission_notifications, reply_notifications;`,
+            [postNotifications, missionNotifications, replyNotifications, user.id],
         );
 
         let roleAdded = false;
         if (roleCode === process.env.MISSION_ROLE_CODE) {
-            const addMissionsNotifications = `
+            const addMissionsNotificationsQuery = `
                 UPDATE user_preferences
                 SET mission_notifications = $1
                 WHERE user_id = $2
             `;
-            await this.client(addMissionsNotifications, [true, user.id]);
+            await this.client(addMissionsNotificationsQuery, [true, user.id]);
 
             const roleInsertQuery = `
                 INSERT INTO user_role_mappings (user_id, role_id)
@@ -589,6 +579,7 @@ class DbClient {
             userPreferences: {
                 postNotifications: rows[0].post_notifications,
                 missionNotifications: rows[0].mission_notifications,
+                replyNotifications: rows[0].reply_notifications,
             },
             roleAdded,
         };

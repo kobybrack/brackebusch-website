@@ -21,6 +21,7 @@ export interface User {
     userPreferences?: {
         postNotifications: boolean;
         missionNotifications: boolean;
+        replyNotifications: boolean;
     };
 }
 export interface UpdateUserBody {
@@ -28,7 +29,7 @@ export interface UpdateUserBody {
     username: string;
     firstName: string;
     lastName: string;
-    userPreferences: { postNotifications: boolean; missionNotifications: boolean };
+    userPreferences: { postNotifications: boolean; missionNotifications: boolean; replyNotifications: boolean };
     roleCode?: string;
 }
 export interface Comment {
