@@ -35,15 +35,14 @@ export default function PostContent({ post }: PostContentProps) {
             <div className="prose">
                 <h1>{post.title}</h1>
                 <Markdown
-                    children={post.content}
                     components={{
-                        img(props) {
+                        img(props: { src?: string | Blob; alt?: string }) {
                             const { src, alt } = props;
                             if (src) {
                                 const index = slides.findIndex((slide) => slide.src === src);
                                 return (
                                     <Image
-                                        src={src}
+                                        src={src as string}
                                         alt={alt || 'post image'}
                                         width={0}
                                         height={0}
@@ -56,7 +55,9 @@ export default function PostContent({ post }: PostContentProps) {
                             return undefined;
                         },
                     }}
-                />
+                >
+                    {post.content}
+                </Markdown>
                 <Lightbox
                     open={lightboxOpen}
                     close={() => setLightboxOpen(false)}

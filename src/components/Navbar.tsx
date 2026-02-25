@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 
 const baseHeaderPages = {
     Home: '/',
@@ -25,16 +24,12 @@ export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: 
     };
 
     const handleLinkClick = () => {
-        document.activeElement instanceof HTMLElement && document.activeElement.blur();
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
     };
 
-    const navItems = Object.entries(headerPages).map(([text, href], index) => (
-        <li key={index}>
-            <Link href={href} onClick={handleLinkClick}>
-                {text}
-            </Link>
-        </li>
-    ));
+    const navButtonClasses = 'btn btn-ghost justify-start !text-(length:--font-size)';
 
     const authLinkHref = loggedIn ? '/logout' : '/login';
     const authLinkString = loggedIn ? 'Log out' : 'Log in';
@@ -66,11 +61,7 @@ export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: 
                         >
                             {Object.entries(headerPages).map(([text, href], index) => (
                                 <li key={index}>
-                                    <Link
-                                        className={'!btn !btn-ghost !justify-start'}
-                                        href={href}
-                                        onClick={handleLinkClick}
-                                    >
+                                    <Link className={navButtonClasses} href={href} onClick={handleLinkClick}>
                                         {text}
                                     </Link>
                                 </li>
@@ -113,21 +104,13 @@ export default function Navbar({ loggedIn, roles }: { loggedIn: boolean; roles: 
                         >
                             {loggedIn && (
                                 <li>
-                                    <Link
-                                        className="!btn !btn-ghost !justify-start"
-                                        href="/account"
-                                        onClick={handleLinkClick}
-                                    >
+                                    <Link className={navButtonClasses} href="/account" onClick={handleLinkClick}>
                                         Settings
                                     </Link>
                                 </li>
                             )}
                             <li key={'auth link'}>
-                                <Link
-                                    className="!btn !btn-ghost !justify-start"
-                                    href={authLinkHref}
-                                    onClick={handleLinkClick}
-                                >
+                                <Link className={navButtonClasses} href={authLinkHref} onClick={handleLinkClick}>
                                     {authLinkString}
                                 </Link>
                             </li>

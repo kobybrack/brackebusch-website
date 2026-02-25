@@ -18,7 +18,7 @@ export default async function PostServerComponent({
     if (missionPost && !user?.roles?.includes('missions')) {
         return (
             <div className="flex flex-col justify-center items-center">
-                You don't have access to this page.
+                You don&apos;t have access to this page.
                 <br />
                 If you think this is a mistake, please contact Koby.
             </div>

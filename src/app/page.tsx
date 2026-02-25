@@ -23,9 +23,10 @@ export default function Home() {
             <div className="prose">
                 <h1>Welcome!</h1>
                 <p>
-                    I'm Koby. I made this website to post my random thoughts, hobbies, life updates, and other things.
-                    I'm thinking of it as a digital archive of my life. It's also a way I can keep up with my friends
-                    and catch up my new friends, since I don't really use social media. I hope you like it!
+                    I&apos;m Koby. I made this website to post my random thoughts, hobbies, life updates, and other
+                    things. I&apos;m thinking of it as a digital archive of my life. It&apos;s also a way I can keep up
+                    with my friends and catch up my new friends, since I don&apos;t really use social media. I hope you
+                    like it!
                 </p>
                 <h2 className="mt-0">Latest posts:</h2>
                 <div className="flex flex-col gap-6">

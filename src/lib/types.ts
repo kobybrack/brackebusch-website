@@ -21,20 +21,33 @@ export interface User {
     userPreferences?: {
         postNotifications: boolean;
         missionNotifications: boolean;
+        replyNotifications: boolean;
     };
+}
+export interface UpdateUserBody {
+    email: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    userPreferences: { postNotifications: boolean; missionNotifications: boolean; replyNotifications: boolean };
+    roleCode?: string;
 }
 export interface Comment {
     id: string;
     postId: string;
     createdAt: string;
     updatedAt: string;
+    deletedAt: string | null;
     content: string;
     userData: {
         userId: string;
         firstName?: string;
         lastName?: string;
+        email?: string;
         username: string;
     };
+    parentCommentId: string | null;
+    replies: Comment[];
 }
 
 export const signInSchema = object({

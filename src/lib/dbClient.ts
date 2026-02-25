@@ -1,5 +1,5 @@
 import { neon, NeonQueryFunction } from '@neondatabase/serverless';
-import { Post, User, Comment } from './types';
+import { Post, User, Comment, UpdateUserBody } from './types';
 
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
@@ -13,7 +13,7 @@ class DbClient {
         this.client = neon(`${process.env.DATABASE_URL}`);
     }
 
-    async getPostFromId(postId: string) {
+    async getPostById(postId: string) {
         const query = `
             SELECT *
             FROM posts
@@ -203,47 +203,106 @@ class DbClient {
         return post;
     }
 
+    async getCommentUser(commentId?: string): Promise<Partial<User> | undefined> {
+        if (!commentId) {
+            return undefined;
+        }
+
+        const query = `
+            SELECT u.*, up.post_notifications, up.mission_notifications, up.reply_notifications
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            LEFT JOIN user_preferences up ON u.id = up.user_id
+            WHERE c.id = $1
+        `;
+        const rows = await this.client(query, [commentId]);
+        if (rows.length !== 1 || rows[0].deleted_at) {
+            return undefined;
+        }
+        const row = rows[0];
+        const user: Partial<User> = {
+            email: row.email,
+            userPreferences: {
+                postNotifications: row.post_notifications,
+                missionNotifications: row.mission_notifications,
+                replyNotifications: row.reply_notifications,
+            },
+        };
+        return user;
+    }
+
     async getComments(postId: string): Promise<Comment[]> {
         const query = `
             SELECT 
-                comments.*,
-                users.id AS user_id,
-                users.first_name,
-                users.last_name,
-                users.username
+                c.id, c.post_id, c.content, c.created_at, c.updated_at, c.deleted_at, c.parent_comment_id,
+                u.id AS user_id, u.first_name, u.last_name, u.username
             FROM 
-                comments
+                comments c
             INNER JOIN 
-                users
+                users u
             ON 
-                comments.user_id = users.id
+                c.user_id = u.id
             WHERE 
-                comments.post_id = $1
-            ORDER BY comments.id DESC;
+                c.post_id = $1
+            ORDER BY 
+                c.parent_comment_id IS NULL DESC, 
+                CASE WHEN c.parent_comment_id IS NOT NULL THEN c.id ELSE NULL END ASC,
+                CASE WHEN c.parent_comment_id IS NULL THEN c.id ELSE NULL END DESC;
         `;
 
         const rows = await this.client(query, [postId]);
+        const commentMap: Record<string, Comment> = {};
 
-        return rows.map((row) => ({
-            id: row.id,
-            postId: row.post_id,
-            content: row.content,
-            createdAt: row.created_at,
-            updatedAt: row.updated_at,
-            userData: {
-                userId: row.user_id,
-                firstName: row.first_name,
-                lastName: row.last_name,
-                username: row.username,
-            },
-        }));
+        rows.forEach((row) => {
+            commentMap[row.id] = {
+                id: row.id,
+                postId: row.post_id,
+                content: row.content,
+                createdAt: row.created_at,
+                updatedAt: row.updated_at,
+                deletedAt: row.deleted_at,
+                parentCommentId: row.parent_comment_id,
+                userData: {
+                    userId: row.user_id,
+                    firstName: row.first_name,
+                    lastName: row.last_name,
+                    username: row.username,
+                },
+                replies: [],
+            };
+        });
+
+        const rootComments: Comment[] = [];
+        rows.forEach((row) => {
+            const comment = commentMap[row.id];
+            if (row.parent_comment_id && commentMap[row.parent_comment_id]) {
+                commentMap[row.parent_comment_id].replies.push(comment);
+            } else if (!row.parent_comment_id) {
+                rootComments.push(comment);
+            }
+        });
+
+        const filterNodes = (list: Comment[]): Comment[] => {
+            return list.filter((c) => {
+                c.replies = filterNodes(c.replies);
+                // Keep if: Not deleted OR has at least one reply
+                return !c.deletedAt || c.replies.length > 0;
+            });
+        };
+
+        return filterNodes(rootComments);
     }
 
-    async insertComment(postId: string, userId: string, content: string): Promise<Comment> {
+    async insertComment(
+        postId: string,
+        userId: string,
+        content: string,
+        parentCommentId: string | null,
+    ): Promise<Comment> {
         const query = `
         WITH inserted_comment AS (
-            INSERT INTO comments (post_id, user_id, content)
-            VALUES ($1, $2, $3)
+            INSERT INTO comments (post_id, user_id, content, parent_comment_id)
+            VALUES ($1, $2, $3, $4)
             RETURNING *
         )
         SELECT 
@@ -260,7 +319,7 @@ class DbClient {
             inserted_comment.user_id = users.id;
         `;
 
-        const rows = await this.client(query, [postId, userId, content]);
+        const rows = await this.client(query, [postId, userId, content, parentCommentId]);
         if (rows.length !== 1) {
             throw new Error('0 or Multiple rows returned when inserting comment');
         }
@@ -271,17 +330,20 @@ class DbClient {
             content: row.content,
             createdAt: row.created_at,
             updatedAt: row.updated_at,
+            deletedAt: row.deleted_at,
+            parentCommentId: row.parent_comment_id,
             userData: {
                 userId: row.user_id,
                 firstName: row.first_name,
                 lastName: row.last_name,
                 username: row.username,
             },
+            replies: [],
         };
     }
 
     async deleteComment(commentId: string, userId: string, isAdmin: boolean) {
-        let query = `DELETE FROM comments WHERE id = $1`;
+        let query = `UPDATE comments SET deleted_at = NOW() WHERE id = $1`;
         const params = [commentId];
 
         if (!isAdmin) {
@@ -302,6 +364,7 @@ class DbClient {
                 u.last_name,
                 up.post_notifications,
                 up.mission_notifications,
+                up.reply_notifications,
                 r.role_name
             FROM users u
             LEFT JOIN user_preferences up ON u.id = up.user_id
@@ -328,6 +391,7 @@ class DbClient {
             userPreferences: {
                 postNotifications: row.post_notifications,
                 missionNotifications: row.mission_notifications,
+                replyNotifications: row.reply_notifications,
             },
         };
     }
@@ -421,7 +485,6 @@ class DbClient {
         `;
 
         const existingUser = await this.client(existingUserQuery, [email]);
-
         if (existingUser.length > 0) {
             throw new Error('A user already exists with this email');
         }
@@ -443,6 +506,7 @@ class DbClient {
             lastName: row.last_name,
         };
 
+        // Set default user preferences
         const userPreferenceInsertQuery = `
             INSERT INTO user_preferences (user_id)
             VALUES ($1);
@@ -450,12 +514,15 @@ class DbClient {
 
         await this.client(userPreferenceInsertQuery, [user.id]);
 
-        return user;
+        return {
+            ...user,
+            userPreferences: { postNotifications: true, missionNotifications: false, replyNotifications: true },
+        };
     }
 
-    async updateUser(updateUserBody: any): Promise<User & { roleAdded: boolean }> {
+    async updateUser(updateUserBody: UpdateUserBody): Promise<User & { roleAdded: boolean }> {
         const { email, username, firstName, lastName, userPreferences, roleCode } = updateUserBody;
-        const { postNotifications, missionNotifications } = userPreferences;
+        const { postNotifications, missionNotifications, replyNotifications } = userPreferences;
         let rows = await this.client(`SELECT email from users where username = $1;`, [username]);
         if (rows.length > 0 && rows[0].email !== email) {
             throw new Error('This username is taken');
@@ -463,9 +530,9 @@ class DbClient {
 
         rows = await this.client(
             `UPDATE users
-                 SET username = $1, first_name = $2, last_name = $3
-                 WHERE email = $4
-                 RETURNING id, email, username, first_name, last_name;`,
+            SET username = $1, first_name = $2, last_name = $3
+            WHERE email = $4
+            RETURNING id, email, username, first_name, last_name;`,
             [username, firstName, lastName, email],
         );
 
@@ -477,21 +544,28 @@ class DbClient {
 
         rows = await this.client(
             `UPDATE user_preferences
-                 SET post_notifications = $1, mission_notifications = $2
-                 WHERE user_id = $3
-                 RETURNING post_notifications, mission_notifications;`,
-            [postNotifications, missionNotifications, user.id],
+            SET post_notifications = $1, mission_notifications = $2, reply_notifications = $3
+            WHERE user_id = $4
+            RETURNING post_notifications, mission_notifications, reply_notifications;`,
+            [postNotifications, missionNotifications, replyNotifications, user.id],
         );
 
         let roleAdded = false;
         if (roleCode === process.env.MISSION_ROLE_CODE) {
+            const addMissionsNotificationsQuery = `
+                UPDATE user_preferences
+                SET mission_notifications = $1
+                WHERE user_id = $2
+            `;
+            await this.client(addMissionsNotificationsQuery, [true, user.id]);
+
             const roleInsertQuery = `
-                    INSERT INTO user_role_mappings (user_id, role_id)
-                    SELECT $1, id
-                    FROM roles
-                    WHERE role_name = 'missions'
-                    ON CONFLICT (user_id, role_id) DO NOTHING;
-                `;
+                INSERT INTO user_role_mappings (user_id, role_id)
+                SELECT $1, id
+                FROM roles
+                WHERE role_name = 'missions'
+                ON CONFLICT (user_id, role_id) DO NOTHING;
+            `;
             await this.client(roleInsertQuery, [user.id]);
             roleAdded = true;
         }
@@ -505,6 +579,7 @@ class DbClient {
             userPreferences: {
                 postNotifications: rows[0].post_notifications,
                 missionNotifications: rows[0].mission_notifications,
+                replyNotifications: rows[0].reply_notifications,
             },
             roleAdded,
         };
