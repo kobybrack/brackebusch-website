@@ -521,13 +521,13 @@ class DbClient {
         };
 
         const userPreferenceInsertQuery = `
-            INSERT INTO user_preferences (user_id)
-            VALUES ($1);
+            INSERT INTO user_preferences (user_id, post_notifications)
+            VALUES ($1, $2);
         `;
 
-        await this.client(userPreferenceInsertQuery, [user.id]);
+        await this.client(userPreferenceInsertQuery, [user.id, true]);
 
-        return user;
+        return { ...user, userPreferences: { postNotifications: true, missionNotifications: false } };
     }
 
     async updateUser(updateUserBody: UpdateUserBody): Promise<User & { roleAdded: boolean }> {
@@ -540,9 +540,9 @@ class DbClient {
 
         rows = await this.client(
             `UPDATE users
-                 SET username = $1, first_name = $2, last_name = $3
-                 WHERE email = $4
-                 RETURNING id, email, username, first_name, last_name;`,
+            SET username = $1, first_name = $2, last_name = $3
+            WHERE email = $4
+            RETURNING id, email, username, first_name, last_name;`,
             [username, firstName, lastName, email],
         );
 
@@ -554,21 +554,28 @@ class DbClient {
 
         rows = await this.client(
             `UPDATE user_preferences
-                 SET post_notifications = $1, mission_notifications = $2
-                 WHERE user_id = $3
-                 RETURNING post_notifications, mission_notifications;`,
+            SET post_notifications = $1, mission_notifications = $2
+            WHERE user_id = $3
+            RETURNING post_notifications, mission_notifications;`,
             [postNotifications, missionNotifications, user.id],
         );
 
         let roleAdded = false;
         if (roleCode === process.env.MISSION_ROLE_CODE) {
+            const addMissionsNotifications = `
+                UPDATE user_preferences
+                SET mission_notifications = $1
+                WHERE user_id = $2
+            `;
+            await this.client(addMissionsNotifications, [true, user.id]);
+
             const roleInsertQuery = `
-                    INSERT INTO user_role_mappings (user_id, role_id)
-                    SELECT $1, id
-                    FROM roles
-                    WHERE role_name = 'missions'
-                    ON CONFLICT (user_id, role_id) DO NOTHING;
-                `;
+                INSERT INTO user_role_mappings (user_id, role_id)
+                SELECT $1, id
+                FROM roles
+                WHERE role_name = 'missions'
+                ON CONFLICT (user_id, role_id) DO NOTHING;
+            `;
             await this.client(roleInsertQuery, [user.id]);
             roleAdded = true;
         }
