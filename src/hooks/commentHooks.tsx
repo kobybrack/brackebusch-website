@@ -30,7 +30,8 @@ export function useSubmitComment(postId: string) {
             });
 
             if (!response.ok) {
-                return 'Failed to submit comment';
+                const text = await response.text();
+                throw new Error(text || `Request failed with status ${response.status}`);
             }
 
             const data = await response.json();
@@ -42,7 +43,7 @@ export function useSubmitComment(postId: string) {
                 }
 
                 return oldData.map((c) =>
-                    c.id === comment.parentCommentId ? { ...c, replies: [...(c.replies || []), comment] } : c,
+                    c.id === comment.parentCommentId ? { ...c, replies: [...c.replies, comment] } : c,
                 );
             });
             return data.comment as Comment;
@@ -91,13 +92,13 @@ export function useDeleteComment(postId: string) {
                     }
 
                     // 2. Updating a comment that has replies
-                    if (replies && replies.length > 0 && c.id === commentId) {
+                    if (c.id === commentId && replies.length > 0) {
                         acc.push({ ...c, deletedAt: new Date().toISOString() });
                         return acc;
                     }
 
                     // 3. Removing a top-level comment
-                    if (!parentCommentId && c.id === commentId) {
+                    if (c.id === commentId && !parentCommentId) {
                         return acc; // skip it
                     }
 

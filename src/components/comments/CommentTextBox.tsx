@@ -21,25 +21,28 @@ export default function CommentTextBox({
 }) {
     const { submitComment } = useSubmitComment(postId);
     const handleSubmit = async (_: unknown, formData: FormData) => {
-        const submitResponse = await submitComment(formData);
-        if (typeof submitResponse === 'string') {
-            return submitResponse;
+        try {
+            const { id: submittedCommentId } = await submitComment(formData);
+
+            setContent('');
+            closeReplyTextbox();
+            openReplies();
+
+            setTimeout(() => {
+                document
+                    .getElementById(`comment-${submittedCommentId}`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+
+            fetch(`/api/posts/${postId}/comments/${submittedCommentId}/notify`, {
+                method: 'POST',
+                body: JSON.stringify({ parentCommentId }),
+                keepalive: true,
+            }).catch(console.error);
+        } catch (error) {
+            console.error(error);
+            return 'Failed to submit comment';
         }
-
-        setContent('');
-        closeReplyTextbox();
-        openReplies();
-
-        setTimeout(() => {
-            document
-                .getElementById(`comment-${submitResponse.id}`)
-                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
-
-        await fetch(`/api/posts/${postId}/comments/${submitResponse.id}/notify`, {
-            method: 'POST',
-            body: JSON.stringify({ parentCommentId }),
-        });
     };
 
     const [errorMessage, formAction, isPending, reset] = useResettableActionState(handleSubmit, null);

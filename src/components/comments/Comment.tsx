@@ -1,8 +1,7 @@
 import { Comment as CommentType, User } from '@/lib/types';
 import { timeAgo } from '@/lib/miscHelpers';
 import { useDeleteComment } from '@/hooks/commentHooks';
-import { useState, Dispatch, SetStateAction } from 'react';
-import CommentTextBox from './CommentTextBox';
+import { Dispatch, SetStateAction } from 'react';
 
 export default function CommentComponent({
     comment,
@@ -18,7 +17,6 @@ export default function CommentComponent({
     setShowRepliesMap?: Dispatch<SetStateAction<Record<string, boolean>>>;
 }) {
     const { deleteComment } = useDeleteComment(comment.postId);
-    const [showReplyTextbox, setShowReplyTextbox] = useState(false);
 
     return (
         <div>
@@ -86,14 +84,10 @@ export default function CommentComponent({
                                 <button
                                     className="btn btn-sm btn-ghost"
                                     onClick={() => {
-                                        if (comment.parentCommentId) {
-                                            setShowReplyTextbox((prev) => !prev);
-                                        } else {
-                                            setShowParentReplyTextbox((prev) => ({
-                                                ...prev,
-                                                [comment.id]: !prev[comment.id],
-                                            }));
-                                        }
+                                        setShowParentReplyTextbox((prev) => ({
+                                            ...prev,
+                                            [comment.id]: !prev[comment.id],
+                                        }));
                                     }}
                                 >
                                     Reply
@@ -119,16 +113,6 @@ export default function CommentComponent({
                         ? `Hide ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`
                         : `View ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`}
                 </button>
-            )}
-            {showReplyTextbox && (
-                <CommentTextBox
-                    user={user}
-                    postId={comment.postId}
-                    postKey={''}
-                    closeReplyTextbox={() => setShowReplyTextbox(false)}
-                    openReplies={() => {}}
-                    parentCommentId={comment.parentCommentId || comment.id}
-                />
             )}
         </div>
     );
