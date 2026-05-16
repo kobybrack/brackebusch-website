@@ -59,3 +59,12 @@
 .grecaptcha-badge {
     visibility: hidden !important;
 }
+
+.tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: var(--color-base-content);
+    opacity: 0.4;
+    pointer-events: none;
+    height: 0;
+}

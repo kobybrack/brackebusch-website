@@ -585,6 +585,42 @@ class DbClient {
         };
     }
 
+    async getUsersByIds(ids: string[], postId?: string): Promise<(Partial<User> & { hasCommentInPost: boolean })[]> {
+        if (!ids.length) return [];
+        const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
+        const hasCommentExpr = postId
+            ? `EXISTS(SELECT 1 FROM comments c WHERE c.user_id = u.id AND c.post_id = $${ids.length + 1}) AS has_comment`
+            : `FALSE AS has_comment`;
+        const query = `
+            SELECT u.email, up.reply_notifications, ${hasCommentExpr}
+            FROM users u
+            LEFT JOIN user_preferences up ON u.id = up.user_id
+            WHERE u.id IN (${placeholders})
+        `;
+        const params = postId ? [...ids, postId] : ids;
+        const rows = await this.client(query, params);
+        return rows.map((row) => ({
+            email: row.email,
+            userPreferences: {
+                replyNotifications: row.reply_notifications,
+                postNotifications: false,
+                missionNotifications: false,
+            },
+            hasCommentInPost: row.has_comment,
+        }));
+    }
+
+    async getAllUsers(): Promise<User[]> {
+        const query = `SELECT id, username, first_name, last_name FROM users ORDER BY first_name, last_name`;
+        const rows = await this.client(query);
+        return rows.map((row) => ({
+            id: String(row.id),
+            username: row.username ?? null,
+            firstName: row.first_name ?? null,
+            lastName: row.last_name ?? null,
+        }));
+    }
+
     async getRoles(userId: string): Promise<string[]> {
         const query = `
             SELECT roles.role_name

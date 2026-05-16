@@ -1,8 +1,14 @@
-import { useSubmitComment } from '@/hooks/commentHooks';
+'use client';
+
+import { useSubmitComment, useGetUsers } from '@/hooks/commentHooks';
 import useResettableActionState from '@/hooks/useResettableActionState';
 import { User } from '@/lib/types';
+import Placeholder from '@tiptap/extension-placeholder';
+import Mention from '@tiptap/extension-mention';
+import StarterKit from '@tiptap/starter-kit';
+import { EditorContent, useEditor } from '@tiptap/react';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 export default function CommentTextBox({
     postId,
@@ -11,6 +17,7 @@ export default function CommentTextBox({
     closeReplyTextbox,
     openReplies,
     parentCommentId,
+    replyTo,
 }: {
     postId: string;
     user: User | undefined;
@@ -18,13 +25,144 @@ export default function CommentTextBox({
     closeReplyTextbox: () => void;
     openReplies: () => void;
     parentCommentId?: string;
+    replyTo?: Pick<User, 'id' | 'username' | 'firstName' | 'lastName'>;
 }) {
     const { submitComment } = useSubmitComment(postId);
+    const [content, setContent] = useState('');
+    const [isEmpty, setIsEmpty] = useState(true);
+    const { data: users } = useGetUsers(!!user);
+    const usersRef = useRef(users);
+    usersRef.current = users;
+
+    const [mentionState, setMentionState] = useState<{
+        items: User[];
+        pos: { top: number; left: number };
+        selectedIdx: number;
+    } | null>(null);
+    const mentionCommandRef = useRef<((attrs: { id: string; label: string }) => void) | null>(null);
+    const mentionSelectedIdxRef = useRef(0);
+    const mentionItemsRef = useRef<User[]>([]);
+
+    const selectMention = useCallback((u: User) => {
+        const label = u.username ?? [u.firstName, u.lastName].filter(Boolean).join(' ');
+        mentionCommandRef.current?.({ id: u.id, label });
+        setMentionState(null);
+    }, []);
+
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Placeholder.configure({
+                placeholder: user ? 'Write a comment!' : 'Log in to comment!',
+            }),
+            Mention.configure({
+                HTMLAttributes: { class: 'font-bold' },
+                suggestion: {
+                    char: '@',
+                    items: ({ query }) => {
+                        if (query.length < 2 || !usersRef.current) return [];
+                        const q = query.toLowerCase();
+                        return usersRef.current
+                            .filter(
+                                (u) =>
+                                    u.username?.toLowerCase().includes(q) ||
+                                    `${u.firstName ?? ''} ${u.lastName ?? ''}`.toLowerCase().trim().includes(q),
+                            )
+                            .slice(0, 8);
+                    },
+                    render: () => ({
+                        onStart(props) {
+                            mentionItemsRef.current = props.items as User[];
+                            mentionSelectedIdxRef.current = 0;
+                            mentionCommandRef.current = props.command;
+                            const rect = props.clientRect?.();
+                            if (rect && props.items.length > 0) {
+                                setMentionState({
+                                    items: props.items as User[],
+                                    pos: { top: rect.bottom, left: rect.left },
+                                    selectedIdx: 0,
+                                });
+                            }
+                        },
+                        onUpdate(props) {
+                            mentionItemsRef.current = props.items as User[];
+                            mentionSelectedIdxRef.current = 0;
+                            mentionCommandRef.current = props.command;
+                            const rect = props.clientRect?.();
+                            if (rect && props.items.length > 0) {
+                                setMentionState({
+                                    items: props.items as User[],
+                                    pos: { top: rect.bottom, left: rect.left },
+                                    selectedIdx: 0,
+                                });
+                            } else {
+                                setMentionState(null);
+                            }
+                        },
+                        onKeyDown({ event }) {
+                            if (!mentionItemsRef.current.length) return false;
+                            if (event.key === 'ArrowDown') {
+                                const next = Math.min(
+                                    mentionSelectedIdxRef.current + 1,
+                                    mentionItemsRef.current.length - 1,
+                                );
+                                mentionSelectedIdxRef.current = next;
+                                setMentionState((prev) => (prev ? { ...prev, selectedIdx: next } : null));
+                                return true;
+                            }
+                            if (event.key === 'ArrowUp') {
+                                const prev = Math.max(mentionSelectedIdxRef.current - 1, 0);
+                                mentionSelectedIdxRef.current = prev;
+                                setMentionState((s) => (s ? { ...s, selectedIdx: prev } : null));
+                                return true;
+                            }
+                            if (event.key === 'Enter') {
+                                const u = mentionItemsRef.current[mentionSelectedIdxRef.current];
+                                if (u) selectMention(u);
+                                return true;
+                            }
+                            return false;
+                        },
+                        onExit() {
+                            mentionItemsRef.current = [];
+                            mentionCommandRef.current = null;
+                            setMentionState(null);
+                        },
+                    }),
+                },
+            }),
+        ],
+        editable: !!user,
+        onCreate: ({ editor }) => {
+            if (!replyTo) return;
+            const label = replyTo.username ?? [replyTo.firstName, replyTo.lastName].filter(Boolean).join(' ');
+            editor.commands.insertContent([
+                { type: 'mention', attrs: { id: replyTo.id, label } },
+                { type: 'text', text: ' ' },
+            ]);
+            editor.commands.focus('end');
+        },
+        onUpdate: ({ editor }) => {
+            setIsEmpty(editor.isEmpty);
+            setContent(JSON.stringify(editor.getJSON()));
+        },
+        editorProps: {
+            attributes: {
+                class: 'focus:outline-none',
+            },
+        },
+    });
+
     const handleSubmit = async (_: unknown, formData: FormData) => {
         try {
             const { id: submittedCommentId } = await submitComment(formData);
 
-            setContent('');
+            const mentionIds: string[] = [];
+            editor?.state.doc.descendants((node) => {
+                if (node.type.name === 'mention') mentionIds.push(node.attrs.id);
+            });
+
+            editor?.commands.clearContent();
             closeReplyTextbox();
             openReplies();
 
@@ -36,7 +174,7 @@ export default function CommentTextBox({
 
             fetch(`/api/posts/${postId}/comments/${submittedCommentId}/notify`, {
                 method: 'POST',
-                body: JSON.stringify({ parentCommentId }),
+                body: JSON.stringify({ parentCommentId, mentionIds }),
                 keepalive: true,
             }).catch(console.error);
         } catch (error) {
@@ -47,57 +185,56 @@ export default function CommentTextBox({
 
     const [errorMessage, formAction, isPending, reset] = useResettableActionState(handleSubmit, null);
 
-    const [isFocused, setIsFocused] = useState(false);
-    const [cancelled, setCancelled] = useState(false);
-    const [content, setContent] = useState('');
-
-    const textareaRef = useRef(null);
-
-    useEffect(() => {
-        const textarea = textareaRef.current as HTMLTextAreaElement | null;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${textarea.scrollHeight}px`;
-        }
-    }, [content]);
-
-    const textAreaPlaceHolder = user ? 'Write a comment!' : 'Log in to comment!';
-
     return (
         <form className="w-full flex flex-col justify-start gap-4" action={formAction}>
             {parentCommentId && <input type="hidden" name="parent_comment_id" value={parentCommentId} />}
+            <input type="hidden" name="content" value={content} />
             <div>
-                <textarea
-                    ref={textareaRef}
-                    className={`textarea w-full mb-4 !min-h-[4rem] overflow-hidden ${isFocused || !cancelled ? '' : ''}`}
-                    style={{ resize: 'none' }}
-                    placeholder={textAreaPlaceHolder}
-                    disabled={!user}
-                    name="content"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    onFocus={() => {
-                        setIsFocused(true);
-                        setCancelled(false);
-                    }}
-                    onBlur={(e) => {
-                        if (e.relatedTarget && e.relatedTarget.tagName === 'BUTTON') {
-                            return;
-                        }
-                        setIsFocused(false);
-                    }}
-                />
+                <div
+                    className={`textarea w-full mb-4 !min-h-[4rem] cursor-text ${!user ? 'opacity-50 pointer-events-none' : ''}`}
+                    onClick={() => editor?.commands.focus()}
+                >
+                    <EditorContent editor={editor} />
+                </div>
+                {mentionState && mentionState.items.length > 0 && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: mentionState.pos.top + 4,
+                            left: mentionState.pos.left,
+                            zIndex: 50,
+                        }}
+                        className="bg-base-100 border border-base-300 rounded-box shadow-lg overflow-hidden"
+                    >
+                        {mentionState.items.map((u, i) => (
+                            <button
+                                key={u.id}
+                                type="button"
+                                className={`w-full text-left px-3 py-1.5 text-sm ${
+                                    i === mentionState.selectedIdx
+                                        ? 'bg-primary text-primary-content'
+                                        : 'hover:bg-base-200'
+                                }`}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    selectMention(u);
+                                }}
+                            >
+                                {u.username ?? `${u.firstName} ${u.lastName}`}
+                            </button>
+                        ))}
+                    </div>
+                )}
                 <div className={`${errorMessage ? 'flex justify-between items-center' : ''} mb-4`}>
                     {errorMessage && <span className="text-sm text-error">{errorMessage}</span>}
                     {user ? (
                         <div className="flex justify-end gap-2">
-                            {(content || parentCommentId) && (
+                            {(!isEmpty || parentCommentId) && (
                                 <button
                                     type="button"
-                                    className={`btn btn-sm btn-ghost`}
+                                    className="btn btn-sm btn-ghost"
                                     onClick={() => {
-                                        setCancelled(true);
-                                        setContent('');
+                                        editor?.commands.clearContent();
                                         reset();
                                         if (closeReplyTextbox) closeReplyTextbox();
                                     }}
@@ -106,7 +243,7 @@ export default function CommentTextBox({
                                     Cancel
                                 </button>
                             )}
-                            <button type="submit" className="btn btn-sm btn-primary" disabled={!content || isPending}>
+                            <button type="submit" className="btn btn-sm btn-primary" disabled={isEmpty || isPending}>
                                 {!isPending ? 'Comment' : 'Commenting...'}
                             </button>
                         </div>

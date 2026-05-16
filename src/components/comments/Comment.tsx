@@ -2,19 +2,47 @@ import { Comment as CommentType, User } from '@/lib/types';
 import { timeAgo } from '@/lib/miscHelpers';
 import { useDeleteComment } from '@/hooks/commentHooks';
 import { Dispatch, SetStateAction } from 'react';
+import { generateHTML } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import Mention from '@tiptap/extension-mention';
+
+function renderContent(content: string) {
+    try {
+        const json = JSON.parse(content);
+        if (json?.type === 'doc') {
+            const html = generateHTML(json, [
+                StarterKit,
+                Mention.configure({ HTMLAttributes: { class: 'font-bold' } }),
+            ]);
+            return <div dangerouslySetInnerHTML={{ __html: html }} />;
+        }
+    } catch {
+        // fall through
+    }
+    // Plain-text fallback for comments stored before JSON format
+    return (
+        <p>
+            {content.split(/(@\w+)/).map((part, i) =>
+                /^@\w+$/.test(part) ? <strong key={i}>{part}</strong> : part,
+            )}
+        </p>
+    );
+}
 
 export default function CommentComponent({
     comment,
     user,
-    setShowParentReplyTextbox,
+    onReply,
     showRepliesMap,
     setShowRepliesMap,
+    onReplyToSub,
 }: {
     comment: CommentType;
     user: User | undefined;
-    setShowParentReplyTextbox: Dispatch<SetStateAction<Record<string, boolean>>>;
+    onReply?: () => void;
     showRepliesMap?: Record<string, boolean>;
     setShowRepliesMap?: Dispatch<SetStateAction<Record<string, boolean>>>;
+    onReplyToSub?: (userData: CommentType['userData'], subCommentId: string) => void;
 }) {
     const { deleteComment } = useDeleteComment(comment.postId);
 
@@ -26,16 +54,21 @@ export default function CommentComponent({
                 ) : (
                     <div className="flex flex-col gap-1 w-full">
                         <div className="flex justify-between items-center">
-                            <div className="flex gap-4 items-center">
+                            <div className="flex gap-2 items-center">
                                 <span className="font-bold">
                                     {comment.userData.firstName
                                         ? comment.userData.firstName +
                                           ' ' +
                                           (comment.userData.lastName?.slice(0, 1) || '')
-                                        : comment.userData.username}
+                                        : `@${comment.userData.username}`}
                                 </span>
-                                <span className="text-base-content/25 text-sm">
-                                    {(comment.updatedAt !== comment.createdAt ? 'edited:' : '') + ' '}
+                                {comment.userData.firstName && (
+                                    <span className="text-base-content/70 text-sm">
+                                        @{comment.userData.username}
+                                    </span>
+                                )}
+                                <span className="text-base-content/35 text-xs">
+                                    {(comment.updatedAt !== comment.createdAt ? 'edited: ' : '')}
                                     {timeAgo(comment.updatedAt)}
                                 </span>
                             </div>
@@ -78,17 +111,17 @@ export default function CommentComponent({
                                 )}
                             </div>
                         </div>
-                        <p>{comment.content}</p>
+                        {renderContent(comment.content)}
                         <div className="flex justify-start items-center gap-1 h-[30px]">
-                            {!comment.parentCommentId && (
+                            {!comment.parentCommentId && onReply && (
+                                <button className="btn btn-sm btn-ghost" onClick={onReply}>
+                                    Reply
+                                </button>
+                            )}
+                            {comment.parentCommentId && onReplyToSub && (
                                 <button
                                     className="btn btn-sm btn-ghost"
-                                    onClick={() => {
-                                        setShowParentReplyTextbox((prev) => ({
-                                            ...prev,
-                                            [comment.id]: !prev[comment.id],
-                                        }));
-                                    }}
+                                    onClick={() => onReplyToSub(comment.userData, comment.id)}
                                 >
                                     Reply
                                 </button>
