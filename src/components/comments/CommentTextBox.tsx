@@ -8,7 +8,7 @@ import Mention from '@tiptap/extension-mention';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, useEditor } from '@tiptap/react';
 import Link from 'next/link';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export default function CommentTextBox({
     postId,
@@ -42,6 +42,20 @@ export default function CommentTextBox({
     const mentionCommandRef = useRef<((attrs: { id: string; label: string }) => void) | null>(null);
     const mentionSelectedIdxRef = useRef(0);
     const mentionItemsRef = useRef<User[]>([]);
+    const clientRectRef = useRef<(() => DOMRect | null | undefined) | null>(null);
+
+    const isMentionOpen = mentionState !== null;
+    useEffect(() => {
+        if (!isMentionOpen) return;
+        const handleScroll = () => {
+            const rect = clientRectRef.current?.();
+            if (rect) {
+                setMentionState((prev) => prev ? { ...prev, pos: { top: rect.bottom, left: rect.left } } : null);
+            }
+        };
+        window.addEventListener('scroll', handleScroll, true);
+        return () => window.removeEventListener('scroll', handleScroll, true);
+    }, [isMentionOpen]);
 
     const selectMention = useCallback((u: User) => {
         const label = u.username ?? [u.firstName, u.lastName].filter(Boolean).join(' ');
@@ -71,27 +85,29 @@ export default function CommentTextBox({
                             .slice(0, 8);
                     },
                     render: () => ({
-                        onStart(props) {
-                            mentionItemsRef.current = props.items as User[];
+                        onStart({ items, command, clientRect }) {
+                            mentionItemsRef.current = items as User[];
                             mentionSelectedIdxRef.current = 0;
-                            mentionCommandRef.current = props.command;
-                            const rect = props.clientRect?.();
-                            if (rect && props.items.length > 0) {
+                            mentionCommandRef.current = command;
+                            clientRectRef.current = clientRect ?? null;
+                            const rect = clientRect?.();
+                            if (rect && items.length > 0) {
                                 setMentionState({
-                                    items: props.items as User[],
+                                    items: items as User[],
                                     pos: { top: rect.bottom, left: rect.left },
                                     selectedIdx: 0,
                                 });
                             }
                         },
-                        onUpdate(props) {
-                            mentionItemsRef.current = props.items as User[];
+                        onUpdate({ items, command, clientRect }) {
+                            mentionItemsRef.current = items as User[];
                             mentionSelectedIdxRef.current = 0;
-                            mentionCommandRef.current = props.command;
-                            const rect = props.clientRect?.();
-                            if (rect && props.items.length > 0) {
+                            mentionCommandRef.current = command;
+                            clientRectRef.current = clientRect ?? null;
+                            const rect = clientRect?.();
+                            if (rect && items.length > 0) {
                                 setMentionState({
-                                    items: props.items as User[],
+                                    items: items as User[],
                                     pos: { top: rect.bottom, left: rect.left },
                                     selectedIdx: 0,
                                 });
@@ -126,6 +142,7 @@ export default function CommentTextBox({
                         onExit() {
                             mentionItemsRef.current = [];
                             mentionCommandRef.current = null;
+                            clientRectRef.current = null;
                             setMentionState(null);
                         },
                     }),
@@ -157,11 +174,6 @@ export default function CommentTextBox({
         try {
             const { id: submittedCommentId } = await submitComment(formData);
 
-            const mentionIds: string[] = [];
-            editor?.state.doc.descendants((node) => {
-                if (node.type.name === 'mention') mentionIds.push(node.attrs.id);
-            });
-
             editor?.commands.clearContent();
             closeReplyTextbox();
             openReplies();
@@ -174,7 +186,7 @@ export default function CommentTextBox({
 
             fetch(`/api/posts/${postId}/comments/${submittedCommentId}/notify`, {
                 method: 'POST',
-                body: JSON.stringify({ parentCommentId, mentionIds }),
+                body: JSON.stringify({ parentCommentId }),
                 keepalive: true,
             }).catch(console.error);
         } catch (error) {

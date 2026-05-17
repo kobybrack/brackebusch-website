@@ -585,7 +585,10 @@ class DbClient {
         };
     }
 
-    async getUsersByIds(ids: string[], postId?: string): Promise<(Partial<User> & { hasCommentInPost: boolean })[]> {
+    async getUsersByIds(
+        ids: string[],
+        postId?: string,
+    ): Promise<{ email: string; replyNotifications: boolean; hasCommentInPost: boolean }[]> {
         if (!ids.length) return [];
         const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
         const hasCommentExpr = postId
@@ -601,13 +604,15 @@ class DbClient {
         const rows = await this.client(query, params);
         return rows.map((row) => ({
             email: row.email,
-            userPreferences: {
-                replyNotifications: row.reply_notifications,
-                postNotifications: false,
-                missionNotifications: false,
-            },
+            replyNotifications: row.reply_notifications,
             hasCommentInPost: row.has_comment,
         }));
+    }
+
+    async getCommentContent(commentId: string, postId: string): Promise<string | undefined> {
+        const query = `SELECT content FROM comments WHERE id = $1 AND post_id = $2`;
+        const rows = await this.client(query, [commentId, postId]);
+        return rows[0]?.content;
     }
 
     async getAllUsers(): Promise<User[]> {

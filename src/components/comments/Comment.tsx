@@ -22,9 +22,7 @@ function renderContent(content: string) {
     // Plain-text fallback for comments stored before JSON format
     return (
         <p>
-            {content.split(/(@\w+)/).map((part, i) =>
-                /^@\w+$/.test(part) ? <strong key={i}>{part}</strong> : part,
-            )}
+            {content.split(/(@\w+)/).map((part, i) => (/^@\w+$/.test(part) ? <strong key={i}>{part}</strong> : part))}
         </p>
     );
 }
@@ -55,22 +53,26 @@ export default function CommentComponent({
                     <div className="flex flex-col gap-1 w-full">
                         <div className="flex justify-between items-center">
                             <div className="flex gap-2 items-center">
-                                <span className="font-bold">
-                                    {comment.userData.firstName
-                                        ? comment.userData.firstName +
-                                          ' ' +
-                                          (comment.userData.lastName?.slice(0, 1) || '')
-                                        : `@${comment.userData.username}`}
-                                </span>
-                                {comment.userData.firstName && (
-                                    <span className="text-base-content/70 text-sm">
-                                        @{comment.userData.username}
+                                <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="font-bold text-sm">
+                                            {comment.userData.firstName
+                                                ? comment.userData.firstName +
+                                                  ' ' +
+                                                  (comment.userData.lastName?.slice(0, 1) || '')
+                                                : comment.userData.username}
+                                        </span>
+                                        {comment.userData.firstName && (
+                                            <span className="text-base-content/50 text-sm">
+                                                @{comment.userData.username}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="text-base-content/35 text-xs">
+                                        {comment.updatedAt !== comment.createdAt ? 'edited ' : ''}
+                                        {timeAgo(comment.updatedAt)}
                                     </span>
-                                )}
-                                <span className="text-base-content/35 text-xs">
-                                    {(comment.updatedAt !== comment.createdAt ? 'edited: ' : '')}
-                                    {timeAgo(comment.updatedAt)}
-                                </span>
+                                </div>
                             </div>
                             <div>
                                 {(user?.id === comment.userData.userId || user?.roles?.includes('admin')) && (

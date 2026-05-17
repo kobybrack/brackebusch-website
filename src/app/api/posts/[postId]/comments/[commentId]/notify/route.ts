@@ -2,20 +2,44 @@ import { auth } from '@/auth';
 import dbClient from '@/lib/dbClient';
 import microsoftGraphClient from '@/lib/microsoftGraphClient';
 
-export async function POST(request: Request, { params }: { params: Promise<{ postId: string }> }) {
+type TipTapNode = { type?: string; attrs?: { id?: string }; content?: TipTapNode[] };
+
+function extractMentionIds(content: string | undefined): string[] {
+    if (!content) return [];
+    let doc: TipTapNode;
+    try {
+        doc = JSON.parse(content);
+    } catch {
+        return [];
+    }
+    const ids = new Set<string>();
+    const walk = (node: TipTapNode | undefined) => {
+        if (!node) return;
+        if (node.type === 'mention' && typeof node.attrs?.id === 'string') ids.add(node.attrs.id);
+        node.content?.forEach(walk);
+    };
+    walk(doc);
+    return [...ids];
+}
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ postId: string; commentId: string }> },
+) {
     const session = await auth();
     if (!session?.user) {
         return Response.json('only users with accounts can write comments', { status: 403 });
     }
 
-    const { postId } = await params;
-    const { mentionIds = [] } = (await request.json()) as {
-        parentCommentId?: string;
-        mentionIds?: string[];
-    };
+    const { postId, commentId } = await params;
+    const { parentCommentId } = (await request.json()) as { parentCommentId?: string };
 
-    const [post, mentionedUsers] = await Promise.all([
+    const commentContent = await dbClient.getCommentContent(commentId, postId);
+    const mentionIds = extractMentionIds(commentContent);
+
+    const [post, parentCommentUser, mentionedUsers] = await Promise.all([
         dbClient.getPostById(postId),
+        dbClient.getCommentUser(parentCommentId),
         dbClient.getUsersByIds(mentionIds, postId),
     ]);
 
@@ -23,10 +47,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ pos
     const notified = new Set<string>();
 
     if (post) {
+        if (
+            parentCommentUser?.email &&
+            parentCommentUser.userPreferences?.replyNotifications &&
+            parentCommentUser.email !== session.user?.email
+        ) {
+            emailPromises.push(microsoftGraphClient.sendCommentReplyEmail(parentCommentUser.email, post));
+            notified.add(parentCommentUser.email);
+        }
+
         for (const mentioned of mentionedUsers) {
             if (
                 mentioned.email &&
-                mentioned.userPreferences?.replyNotifications &&
+                mentioned.replyNotifications &&
                 !notified.has(mentioned.email) &&
                 mentioned.email !== session.user?.email
             ) {
