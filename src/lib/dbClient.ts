@@ -6,6 +6,26 @@ if (!dbUrl) {
     throw new Error('Missing required environment variables for neon db');
 }
 
+function mapUser(row: Record<string, unknown>): User {
+    return {
+        id: String(row.id ?? row.user_id),
+        email: row.email as string | undefined,
+        password: row.password as string | undefined,
+        username: row.username as string,
+        firstName: row.first_name as string | undefined,
+        lastName: row.last_name as string | undefined,
+    };
+}
+
+function mapCommentUserData(row: Record<string, unknown>): Comment['userData'] {
+    return {
+        userId: String(row.user_id),
+        firstName: row.first_name as string | undefined,
+        lastName: row.last_name as string | undefined,
+        username: row.username as string,
+    };
+}
+
 class DbClient {
     private client: NeonQueryFunction<false, false>;
 
@@ -262,12 +282,7 @@ class DbClient {
                 updatedAt: row.updated_at,
                 deletedAt: row.deleted_at,
                 parentCommentId: row.parent_comment_id,
-                userData: {
-                    userId: row.user_id,
-                    firstName: row.first_name,
-                    lastName: row.last_name,
-                    username: row.username,
-                },
+                userData: mapCommentUserData(row),
                 replies: [],
             };
         });
@@ -332,12 +347,7 @@ class DbClient {
             updatedAt: row.updated_at,
             deletedAt: row.deleted_at,
             parentCommentId: row.parent_comment_id,
-            userData: {
-                userId: row.user_id,
-                firstName: row.first_name,
-                lastName: row.last_name,
-                username: row.username,
-            },
+            userData: mapCommentUserData(row),
             replies: [],
         };
     }
@@ -381,12 +391,7 @@ class DbClient {
 
         const row = rows[0];
         return {
-            id: row.user_id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
+            ...mapUser(row),
             roles: rows.map((row) => row.role_name).filter((role) => role !== null),
             userPreferences: {
                 postNotifications: row.post_notifications,
@@ -420,12 +425,7 @@ class DbClient {
 
         const row = rows[0];
         return {
-            id: row.user_id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
+            ...mapUser(row),
             roles: rows.map((row) => row.role_name).filter((role) => role !== null),
         };
     }
@@ -446,14 +446,7 @@ class DbClient {
             return undefined;
         }
         const row = rows[0];
-        return {
-            id: row.id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
-        };
+        return mapUser(row);
     }
 
     async getUsersWhoWantEmails(missionPost = false) {
@@ -496,15 +489,7 @@ class DbClient {
         `;
 
         const rows = await this.client(userInsertQuery, [email, password, username, firstName, lastName]);
-        const row = rows[0];
-        const user: User = {
-            id: row.id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
-        };
+        const user: User = mapUser(rows[0]);
 
         // Set default user preferences
         const userPreferenceInsertQuery = `
@@ -571,11 +556,7 @@ class DbClient {
         }
 
         return {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            firstName: user.first_name,
-            lastName: user.last_name,
+            ...mapUser(user),
             userPreferences: {
                 postNotifications: rows[0].post_notifications,
                 missionNotifications: rows[0].mission_notifications,
@@ -583,6 +564,53 @@ class DbClient {
             },
             roleAdded,
         };
+    }
+
+    async getMentionedUsersForNotify(
+        ids: string[],
+        threadId?: string,
+    ): Promise<{ email: string; hasCommentInThread: boolean }[]> {
+        if (!ids.length) return [];
+        const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
+        const hasCommentExpr = threadId
+            ? `EXISTS(
+                SELECT 1 FROM comments c
+                WHERE c.user_id = u.id
+                AND c.deleted_at IS NULL
+                AND (c.id = $${ids.length + 1} OR c.parent_comment_id = $${ids.length + 1})
+            ) AS has_comment`
+            : `FALSE AS has_comment`;
+        const query = `
+            SELECT u.email, ${hasCommentExpr}
+            FROM users u
+            JOIN user_preferences up ON u.id = up.user_id
+            WHERE u.id IN (${placeholders})
+            AND up.reply_notifications = TRUE
+            AND u.email IS NOT NULL
+        `;
+        const params = threadId ? [...ids, threadId] : ids;
+        const rows = await this.client(query, params);
+        return rows.map((row) => ({
+            email: row.email,
+            hasCommentInThread: row.has_comment,
+        }));
+    }
+
+    async getCommentContent(commentId: string, postId: string): Promise<string | undefined> {
+        const query = `SELECT content FROM comments WHERE id = $1 AND post_id = $2`;
+        const rows = await this.client(query, [commentId, postId]);
+        return rows[0]?.content;
+    }
+
+    async getAllUsers(): Promise<User[]> {
+        const query = `SELECT id, username, first_name, last_name FROM users ORDER BY first_name, last_name`;
+        const rows = await this.client(query);
+        return rows.map((row) => ({
+            id: String(row.id),
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+        }));
     }
 
     async getRoles(userId: string): Promise<string[]> {

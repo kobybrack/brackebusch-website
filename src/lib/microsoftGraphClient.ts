@@ -77,6 +77,27 @@ class MicrosoftGraphClient {
         }
     }
 
+    public async sendMentionEmail(email: string, post: Post) {
+        const postUrl = `https://www.brackebusch.com/${post.missionPost ? 'missions' : 'posts'}/${post.postKey}`;
+        try {
+            const request = {
+                message: {
+                    subject: 'You were mentioned in a comment',
+                    body: {
+                        contentType: 'HTML',
+                        content: `You were mentioned in a comment on "${post.title}"!<br/>
+                            Check it out <a href="${postUrl}">here</a>.`,
+                    },
+                    toRecipients: [{ emailAddress: { address: email } }],
+                },
+            };
+            await this.client.api(`/users/${notificationsEmail}/sendMail`).post(request);
+        } catch (error) {
+            console.error('Error sending emails:', error);
+            throw error;
+        }
+    }
+
     public async sendCommentEmail(post: Post) {
         const postUrl = `https://www.brackebusch.com/${post.missionPost ? 'missions' : 'posts'}/${post.postKey}`;
         try {
