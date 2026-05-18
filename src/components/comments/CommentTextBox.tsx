@@ -158,15 +158,6 @@ export default function CommentTextBox({
         ],
         editable: !!user,
         immediatelyRender: false,
-        onCreate: ({ editor }) => {
-            if (!replyTo) return;
-            const label = replyTo.username ?? [replyTo.firstName, replyTo.lastName].filter(Boolean).join(' ');
-            editor.commands.insertContent([
-                { type: 'mention', attrs: { id: replyTo.id, label } },
-                { type: 'text', text: ' ' },
-            ]);
-            editor.commands.focus('end');
-        },
         onUpdate: ({ editor }) => {
             setIsEmpty(editor.isEmpty);
             setContent(JSON.stringify(editor.getJSON()));
@@ -177,6 +168,16 @@ export default function CommentTextBox({
             },
         },
     });
+
+    useEffect(() => {
+        if (!editor || !replyTo) return;
+        const label = replyTo.username ?? [replyTo.firstName, replyTo.lastName].filter(Boolean).join(' ');
+        editor.commands.setContent([
+            { type: 'mention', attrs: { id: replyTo.id, label } },
+            { type: 'text', text: ' ' },
+        ]);
+        editor.commands.focus('end');
+    }, [editor, replyTo?.id]);
 
     const handleSubmit = async (_: unknown, formData: FormData) => {
         try {

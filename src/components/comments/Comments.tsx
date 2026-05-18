@@ -68,7 +68,6 @@ export default function Comments({
 
                     const replyTextbox = isActive && (
                         <CommentTextBox
-                            key={replyTarget.userId}
                             postId={postId}
                             user={user}
                             postKey={postKey}
