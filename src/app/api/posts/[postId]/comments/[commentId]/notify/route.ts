@@ -40,7 +40,7 @@ export async function POST(
     const [post, parentCommentUser, mentionedUsers] = await Promise.all([
         dbClient.getPostById(postId),
         dbClient.getCommentUser(parentCommentId),
-        dbClient.getUsersByIds(mentionIds, parentCommentId),
+        dbClient.getMentionedUsersForNotify(mentionIds, parentCommentId),
     ]);
 
     const emailPromises = [];
@@ -57,12 +57,7 @@ export async function POST(
         }
 
         for (const mentioned of mentionedUsers) {
-            if (
-                mentioned.email &&
-                mentioned.replyNotifications &&
-                !notified.has(mentioned.email) &&
-                mentioned.email !== session.user?.email
-            ) {
+            if (!notified.has(mentioned.email) && mentioned.email !== session.user?.email) {
                 const send = mentioned.hasCommentInThread
                     ? microsoftGraphClient.sendCommentReplyEmail(mentioned.email, post)
                     : microsoftGraphClient.sendMentionEmail(mentioned.email, post);

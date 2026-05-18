@@ -17,6 +17,15 @@ function mapUser(row: Record<string, unknown>): User {
     };
 }
 
+function mapCommentUserData(row: Record<string, unknown>): Comment['userData'] {
+    return {
+        userId: String(row.user_id),
+        firstName: row.first_name as string | undefined,
+        lastName: row.last_name as string | undefined,
+        username: row.username as string,
+    };
+}
+
 class DbClient {
     private client: NeonQueryFunction<false, false>;
 
@@ -273,12 +282,7 @@ class DbClient {
                 updatedAt: row.updated_at,
                 deletedAt: row.deleted_at,
                 parentCommentId: row.parent_comment_id,
-                userData: {
-                    userId: String(row.user_id),
-                    firstName: row.first_name,
-                    lastName: row.last_name,
-                    username: row.username,
-                },
+                userData: mapCommentUserData(row),
                 replies: [],
             };
         });
@@ -343,12 +347,7 @@ class DbClient {
             updatedAt: row.updated_at,
             deletedAt: row.deleted_at,
             parentCommentId: row.parent_comment_id,
-            userData: {
-                userId: row.user_id,
-                firstName: row.first_name,
-                lastName: row.last_name,
-                username: row.username,
-            },
+            userData: mapCommentUserData(row),
             replies: [],
         };
     }
@@ -567,10 +566,10 @@ class DbClient {
         };
     }
 
-    async getUsersByIds(
+    async getMentionedUsersForNotify(
         ids: string[],
         threadId?: string,
-    ): Promise<{ email: string; replyNotifications: boolean; hasCommentInThread: boolean }[]> {
+    ): Promise<{ email: string; hasCommentInThread: boolean }[]> {
         if (!ids.length) return [];
         const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
         const hasCommentExpr = threadId
@@ -582,16 +581,17 @@ class DbClient {
             ) AS has_comment`
             : `FALSE AS has_comment`;
         const query = `
-            SELECT u.email, up.reply_notifications, ${hasCommentExpr}
+            SELECT u.email, ${hasCommentExpr}
             FROM users u
-            LEFT JOIN user_preferences up ON u.id = up.user_id
+            JOIN user_preferences up ON u.id = up.user_id
             WHERE u.id IN (${placeholders})
+            AND up.reply_notifications = TRUE
+            AND u.email IS NOT NULL
         `;
         const params = threadId ? [...ids, threadId] : ids;
         const rows = await this.client(query, params);
         return rows.map((row) => ({
             email: row.email,
-            replyNotifications: row.reply_notifications,
             hasCommentInThread: row.has_comment,
         }));
     }
@@ -607,9 +607,9 @@ class DbClient {
         const rows = await this.client(query);
         return rows.map((row) => ({
             id: String(row.id),
-            username: row.username ?? null,
-            firstName: row.first_name ?? null,
-            lastName: row.last_name ?? null,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
         }));
     }
 
