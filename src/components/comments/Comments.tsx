@@ -10,6 +10,12 @@ import CommentTextBox from './CommentTextBox';
 
 const INITIAL_COMMENTS_TO_SHOW = 4;
 
+type ActiveReply = {
+    topLevelId: string;
+    mentionUser?: CommentType['userData'];
+    position: 'top' | string;
+};
+
 export default function Comments({
     postId,
     postKey,
@@ -22,10 +28,24 @@ export default function Comments({
     const { data: comments, isLoading } = useGetComments(postId);
 
     const [showAllComments, setShowAllComments] = useState(false);
-    const [showRepliesMap, setShowRepliesMap] = useState<Record<string, boolean>>({});
-    const [showReplyTextboxMap, setShowReplyTextboxMap] = useState<Record<string, boolean>>({});
-    const [replyMentionMap, setReplyMentionMap] = useState<Record<string, CommentType['userData']>>({});
-    const [replyPositionMap, setReplyPositionMap] = useState<Record<string, string | null>>({});
+    const [activeReply, setActiveReply] = useState<ActiveReply | null>(null);
+    const [openThreads, setOpenThreads] = useState<Set<string>>(new Set());
+
+    const openThread = (id: string) =>
+        setOpenThreads((prev) => {
+            if (prev.has(id)) return prev;
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+        });
+
+    const toggleThread = (id: string) =>
+        setOpenThreads((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
 
     return (
         <div className="flex flex-col gap-4 justify-start items-center w-full mb-8">
@@ -42,21 +62,17 @@ export default function Comments({
             ) : (
                 comments &&
                 comments.slice(0, showAllComments ? comments.length : INITIAL_COMMENTS_TO_SHOW).map((comment) => {
-                    const replyTarget = replyMentionMap[comment.id] ?? comment.userData;
-                    const replyPosition = replyPositionMap[comment.id] ?? null;
+                    const isActive = activeReply?.topLevelId === comment.id;
+                    const replyTarget = (isActive && activeReply.mentionUser) || comment.userData;
+                    const threadOpen = openThreads.has(comment.id);
 
-                    const replyTextbox = showReplyTextboxMap[comment.id] && (
+                    const replyTextbox = isActive && (
                         <CommentTextBox
-                            key={replyTarget.userId}
                             postId={postId}
                             user={user}
                             postKey={postKey}
-                            closeReplyTextbox={() =>
-                                setShowReplyTextboxMap((prev) => ({ ...prev, [comment.id]: false }))
-                            }
-                            openReplies={() =>
-                                setShowRepliesMap((prev) => ({ ...prev, [comment.id]: true }))
-                            }
+                            closeReplyTextbox={() => setActiveReply(null)}
+                            openReplies={() => openThread(comment.id)}
                             parentCommentId={comment.id}
                             replyTo={{
                                 id: replyTarget.userId,
@@ -73,38 +89,35 @@ export default function Comments({
                                 comment={comment}
                                 user={user}
                                 onReply={() => {
-                                    const isShowingAtTop =
-                                        showReplyTextboxMap[comment.id] && replyPositionMap[comment.id] === null;
-                                    setShowReplyTextboxMap((prev) => ({ ...prev, [comment.id]: !isShowingAtTop }));
-                                    setReplyPositionMap((prev) => ({ ...prev, [comment.id]: null }));
-                                    setReplyMentionMap((prev) => {
-                                        const next = { ...prev };
-                                        delete next[comment.id];
-                                        return next;
-                                    });
+                                    const isShowingAtTop = isActive && activeReply.position === 'top';
+                                    setActiveReply(
+                                        isShowingAtTop ? null : { topLevelId: comment.id, position: 'top' },
+                                    );
                                 }}
-                                showRepliesMap={showRepliesMap}
-                                setShowRepliesMap={setShowRepliesMap}
+                                repliesOpen={threadOpen}
+                                onToggleReplies={() => toggleThread(comment.id)}
                             />
-                            {(showReplyTextboxMap[comment.id] || showRepliesMap[comment.id]) && (
+                            {(isActive || threadOpen) && (
                                 <div className="ml-16 flex flex-col gap-4">
                                     {/* Textbox at top when replying to the top-level comment */}
-                                    {replyPosition === null && replyTextbox}
-                                    {showRepliesMap[comment.id] &&
+                                    {isActive && activeReply.position === 'top' && replyTextbox}
+                                    {threadOpen &&
                                         comment.replies.map((reply) => (
                                             <Fragment key={reply.id}>
                                                 <Comment
                                                     comment={reply}
                                                     user={user}
                                                     onReplyToSub={(userData, subCommentId) => {
-                                                        setShowReplyTextboxMap((prev) => ({ ...prev, [comment.id]: true }));
-                                                        setShowRepliesMap((prev) => ({ ...prev, [comment.id]: true }));
-                                                        setReplyMentionMap((prev) => ({ ...prev, [comment.id]: userData }));
-                                                        setReplyPositionMap((prev) => ({ ...prev, [comment.id]: subCommentId }));
+                                                        setActiveReply({
+                                                            topLevelId: comment.id,
+                                                            mentionUser: userData,
+                                                            position: subCommentId,
+                                                        });
+                                                        openThread(comment.id);
                                                     }}
                                                 />
                                                 {/* Textbox directly under the sub-comment it was triggered from */}
-                                                {replyPosition === reply.id && replyTextbox}
+                                                {isActive && activeReply.position === reply.id && replyTextbox}
                                             </Fragment>
                                         ))}
                                 </div>

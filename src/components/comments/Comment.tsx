@@ -1,7 +1,6 @@
 import { Comment as CommentType, User } from '@/lib/types';
 import { timeAgo } from '@/lib/miscHelpers';
 import { useDeleteComment } from '@/hooks/commentHooks';
-import { Dispatch, SetStateAction } from 'react';
 import { generateHTML } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Mention from '@tiptap/extension-mention';
@@ -31,15 +30,15 @@ export default function CommentComponent({
     comment,
     user,
     onReply,
-    showRepliesMap,
-    setShowRepliesMap,
+    repliesOpen,
+    onToggleReplies,
     onReplyToSub,
 }: {
     comment: CommentType;
     user: User | undefined;
     onReply?: () => void;
-    showRepliesMap?: Record<string, boolean>;
-    setShowRepliesMap?: Dispatch<SetStateAction<Record<string, boolean>>>;
+    repliesOpen?: boolean;
+    onToggleReplies?: () => void;
     onReplyToSub?: (userData: CommentType['userData'], subCommentId: string) => void;
 }) {
     const { deleteComment } = useDeleteComment(comment.postId);
@@ -134,18 +133,8 @@ export default function CommentComponent({
                 )}
             </div>
             {comment.replies.length > 0 && (
-                <button
-                    className="btn btn-ghost btn-sm mt-2"
-                    onClick={() => {
-                        if (setShowRepliesMap) {
-                            setShowRepliesMap((prev) => ({
-                                ...prev,
-                                [comment.id]: !prev[comment.id],
-                            }));
-                        }
-                    }}
-                >
-                    {showRepliesMap && showRepliesMap[comment.id]
+                <button className="btn btn-ghost btn-sm mt-2" onClick={onToggleReplies}>
+                    {repliesOpen
                         ? `Hide ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`
                         : `View ${comment.replies.length} ${comment.replies.length > 1 ? 'replies' : 'reply'}`}
                 </button>

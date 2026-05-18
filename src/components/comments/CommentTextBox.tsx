@@ -1,14 +1,14 @@
 'use client';
 
 import { useSubmitComment, useGetUsers } from '@/hooks/commentHooks';
+import useMentionSuggestion from '@/hooks/useMentionSuggestion';
 import useResettableActionState from '@/hooks/useResettableActionState';
 import { User } from '@/lib/types';
 import Placeholder from '@tiptap/extension-placeholder';
-import Mention from '@tiptap/extension-mention';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorContent, useEditor } from '@tiptap/react';
 import Link from 'next/link';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 function getMentionLabel(u: Pick<User, 'username' | 'firstName' | 'lastName'>): string {
     if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName[0]}.`;
@@ -37,37 +37,7 @@ export default function CommentTextBox({
     const [content, setContent] = useState('');
     const [isEmpty, setIsEmpty] = useState(true);
     const { data: users } = useGetUsers(!!user);
-    const usersRef = useRef(users);
-    usersRef.current = users;
-
-    const [mentionState, setMentionState] = useState<{
-        items: User[];
-        pos: { top: number; left: number };
-        selectedIdx: number;
-    } | null>(null);
-    const mentionCommandRef = useRef<((attrs: { id: string; label: string }) => void) | null>(null);
-    const mentionSelectedIdxRef = useRef(0);
-    const mentionItemsRef = useRef<User[]>([]);
-    const clientRectRef = useRef<(() => DOMRect | null | undefined) | null>(null);
-
-    const isMentionOpen = mentionState !== null;
-    useEffect(() => {
-        if (!isMentionOpen) return;
-        const handleScroll = () => {
-            const rect = clientRectRef.current?.();
-            if (rect) {
-                setMentionState((prev) => (prev ? { ...prev, pos: { top: rect.bottom, left: rect.left } } : null));
-            }
-        };
-        window.addEventListener('scroll', handleScroll, true);
-        return () => window.removeEventListener('scroll', handleScroll, true);
-    }, [isMentionOpen]);
-
-    const selectMention = useCallback((u: User) => {
-        const label = u.username ?? [u.firstName, u.lastName].filter(Boolean).join(' ');
-        mentionCommandRef.current?.({ id: u.id, label });
-        setMentionState(null);
-    }, []);
+    const { extension: mentionExtension, dropdownState, selectMention } = useMentionSuggestion(users);
 
     const editor = useEditor({
         extensions: [
@@ -76,97 +46,10 @@ export default function CommentTextBox({
                 placeholder: user ? 'Write a comment!' : 'Log in to comment!',
                 showOnlyWhenEditable: false,
             }),
-            Mention.configure({
-                HTMLAttributes: { class: 'font-bold' },
-                suggestion: {
-                    char: '@',
-                    items: ({ query }) => {
-                        if (query.length < 2 || !usersRef.current) return [];
-                        const q = query.toLowerCase();
-                        return usersRef.current
-                            .filter(
-                                (u) =>
-                                    u.username?.toLowerCase().includes(q) ||
-                                    `${u.firstName ?? ''} ${u.lastName ?? ''}`.toLowerCase().trim().includes(q),
-                            )
-                            .slice(0, 8);
-                    },
-                    render: () => ({
-                        onStart({ items, command, clientRect }) {
-                            mentionItemsRef.current = items as User[];
-                            mentionSelectedIdxRef.current = 0;
-                            mentionCommandRef.current = command;
-                            clientRectRef.current = clientRect ?? null;
-                            const rect = clientRect?.();
-                            if (rect && items.length > 0) {
-                                setMentionState({
-                                    items: items as User[],
-                                    pos: { top: rect.bottom, left: rect.left },
-                                    selectedIdx: 0,
-                                });
-                            }
-                        },
-                        onUpdate({ items, command, clientRect }) {
-                            mentionItemsRef.current = items as User[];
-                            mentionSelectedIdxRef.current = 0;
-                            mentionCommandRef.current = command;
-                            clientRectRef.current = clientRect ?? null;
-                            const rect = clientRect?.();
-                            if (rect && items.length > 0) {
-                                setMentionState({
-                                    items: items as User[],
-                                    pos: { top: rect.bottom, left: rect.left },
-                                    selectedIdx: 0,
-                                });
-                            } else {
-                                setMentionState(null);
-                            }
-                        },
-                        onKeyDown({ event }) {
-                            if (!mentionItemsRef.current.length) return false;
-                            if (event.key === 'ArrowDown') {
-                                const next = Math.min(
-                                    mentionSelectedIdxRef.current + 1,
-                                    mentionItemsRef.current.length - 1,
-                                );
-                                mentionSelectedIdxRef.current = next;
-                                setMentionState((prev) => (prev ? { ...prev, selectedIdx: next } : null));
-                                return true;
-                            }
-                            if (event.key === 'ArrowUp') {
-                                const prev = Math.max(mentionSelectedIdxRef.current - 1, 0);
-                                mentionSelectedIdxRef.current = prev;
-                                setMentionState((s) => (s ? { ...s, selectedIdx: prev } : null));
-                                return true;
-                            }
-                            if (event.key === 'Enter') {
-                                const u = mentionItemsRef.current[mentionSelectedIdxRef.current];
-                                if (u) selectMention(u);
-                                return true;
-                            }
-                            return false;
-                        },
-                        onExit() {
-                            mentionItemsRef.current = [];
-                            mentionCommandRef.current = null;
-                            clientRectRef.current = null;
-                            setMentionState(null);
-                        },
-                    }),
-                },
-            }),
+            mentionExtension,
         ],
         editable: !!user,
         immediatelyRender: false,
-        onCreate: ({ editor }) => {
-            if (!replyTo) return;
-            const label = replyTo.username ?? [replyTo.firstName, replyTo.lastName].filter(Boolean).join(' ');
-            editor.commands.insertContent([
-                { type: 'mention', attrs: { id: replyTo.id, label } },
-                { type: 'text', text: ' ' },
-            ]);
-            editor.commands.focus('end');
-        },
         onUpdate: ({ editor }) => {
             setIsEmpty(editor.isEmpty);
             setContent(JSON.stringify(editor.getJSON()));
@@ -177,6 +60,16 @@ export default function CommentTextBox({
             },
         },
     });
+
+    useEffect(() => {
+        if (!editor || !replyTo) return;
+        const label = replyTo.username ?? [replyTo.firstName, replyTo.lastName].filter(Boolean).join(' ');
+        editor.commands.setContent([
+            { type: 'mention', attrs: { id: replyTo.id, label } },
+            { type: 'text', text: ' ' },
+        ]);
+        editor.commands.focus('end');
+    }, [editor, replyTo?.id]);
 
     const handleSubmit = async (_: unknown, formData: FormData) => {
         try {
@@ -216,22 +109,22 @@ export default function CommentTextBox({
                 >
                     <EditorContent editor={editor} />
                 </div>
-                {mentionState && mentionState.items.length > 0 && (
+                {dropdownState && dropdownState.items.length > 0 && (
                     <div
                         style={{
                             position: 'fixed',
-                            top: mentionState.pos.top + 4,
-                            left: mentionState.pos.left,
+                            top: dropdownState.pos.top + 4,
+                            left: dropdownState.pos.left,
                             zIndex: 50,
                         }}
                         className="bg-base-100 border border-base-300 rounded-box shadow-lg overflow-hidden"
                     >
-                        {mentionState.items.map((u, i) => (
+                        {dropdownState.items.map((u, i) => (
                             <button
                                 key={u.id}
                                 type="button"
                                 className={`w-full text-left px-3 py-1.5 text-sm ${
-                                    i === mentionState.selectedIdx
+                                    i === dropdownState.selectedIdx
                                         ? 'bg-primary text-primary-content'
                                         : 'hover:bg-base-200'
                                 }`}
