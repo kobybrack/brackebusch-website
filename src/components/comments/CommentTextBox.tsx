@@ -157,6 +157,7 @@ export default function CommentTextBox({
             }),
         ],
         editable: !!user,
+        immediatelyRender: false,
         onCreate: ({ editor }) => {
             if (!replyTo) return;
             const label = replyTo.username ?? [replyTo.firstName, replyTo.lastName].filter(Boolean).join(' ');
