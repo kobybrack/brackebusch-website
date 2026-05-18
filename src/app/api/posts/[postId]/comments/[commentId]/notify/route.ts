@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import dbClient from '@/lib/dbClient';
 import microsoftGraphClient from '@/lib/microsoftGraphClient';
 
-type TipTapNode = { type?: string; attrs?: { id?: string }; content?: TipTapNode[] };
+type TipTapNode = { type?: string; attrs?: { id?: string | number }; content?: TipTapNode[] };
 
 function extractMentionIds(content: string | undefined): string[] {
     if (!content) return [];
@@ -15,7 +15,7 @@ function extractMentionIds(content: string | undefined): string[] {
     const ids = new Set<string>();
     const walk = (node: TipTapNode | undefined) => {
         if (!node) return;
-        if (node.type === 'mention' && typeof node.attrs?.id === 'string') ids.add(node.attrs.id);
+        if (node.type === 'mention' && node.attrs?.id != null) ids.add(String(node.attrs.id));
         node.content?.forEach(walk);
     };
     walk(doc);
@@ -40,7 +40,7 @@ export async function POST(
     const [post, parentCommentUser, mentionedUsers] = await Promise.all([
         dbClient.getPostById(postId),
         dbClient.getCommentUser(parentCommentId),
-        dbClient.getUsersByIds(mentionIds, postId),
+        dbClient.getUsersByIds(mentionIds, parentCommentId),
     ]);
 
     const emailPromises = [];
@@ -63,7 +63,7 @@ export async function POST(
                 !notified.has(mentioned.email) &&
                 mentioned.email !== session.user?.email
             ) {
-                const send = mentioned.hasCommentInPost
+                const send = mentioned.hasCommentInThread
                     ? microsoftGraphClient.sendCommentReplyEmail(mentioned.email, post)
                     : microsoftGraphClient.sendMentionEmail(mentioned.email, post);
                 emailPromises.push(send);

@@ -10,6 +10,12 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import Link from 'next/link';
 import { useState, useRef, useCallback, useEffect } from 'react';
 
+function getMentionLabel(u: Pick<User, 'username' | 'firstName' | 'lastName'>): string {
+    if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName[0]}.`;
+    if (u.firstName) return u.firstName;
+    return u.username ?? '';
+}
+
 export default function CommentTextBox({
     postId,
     user,
@@ -50,7 +56,7 @@ export default function CommentTextBox({
         const handleScroll = () => {
             const rect = clientRectRef.current?.();
             if (rect) {
-                setMentionState((prev) => prev ? { ...prev, pos: { top: rect.bottom, left: rect.left } } : null);
+                setMentionState((prev) => (prev ? { ...prev, pos: { top: rect.bottom, left: rect.left } } : null));
             }
         };
         window.addEventListener('scroll', handleScroll, true);
@@ -68,6 +74,7 @@ export default function CommentTextBox({
             StarterKit,
             Placeholder.configure({
                 placeholder: user ? 'Write a comment!' : 'Log in to comment!',
+                showOnlyWhenEditable: false,
             }),
             Mention.configure({
                 HTMLAttributes: { class: 'font-bold' },
@@ -232,7 +239,7 @@ export default function CommentTextBox({
                                     selectMention(u);
                                 }}
                             >
-                                {u.username ?? `${u.firstName} ${u.lastName}`}
+                                {getMentionLabel(u)}
                             </button>
                         ))}
                     </div>

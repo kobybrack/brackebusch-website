@@ -6,6 +6,17 @@ if (!dbUrl) {
     throw new Error('Missing required environment variables for neon db');
 }
 
+function mapUser(row: Record<string, unknown>): User {
+    return {
+        id: String(row.id ?? row.user_id),
+        email: row.email as string | undefined,
+        password: row.password as string | undefined,
+        username: row.username as string,
+        firstName: row.first_name as string | undefined,
+        lastName: row.last_name as string | undefined,
+    };
+}
+
 class DbClient {
     private client: NeonQueryFunction<false, false>;
 
@@ -263,7 +274,7 @@ class DbClient {
                 deletedAt: row.deleted_at,
                 parentCommentId: row.parent_comment_id,
                 userData: {
-                    userId: row.user_id,
+                    userId: String(row.user_id),
                     firstName: row.first_name,
                     lastName: row.last_name,
                     username: row.username,
@@ -381,12 +392,7 @@ class DbClient {
 
         const row = rows[0];
         return {
-            id: row.user_id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
+            ...mapUser(row),
             roles: rows.map((row) => row.role_name).filter((role) => role !== null),
             userPreferences: {
                 postNotifications: row.post_notifications,
@@ -420,12 +426,7 @@ class DbClient {
 
         const row = rows[0];
         return {
-            id: row.user_id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
+            ...mapUser(row),
             roles: rows.map((row) => row.role_name).filter((role) => role !== null),
         };
     }
@@ -446,14 +447,7 @@ class DbClient {
             return undefined;
         }
         const row = rows[0];
-        return {
-            id: row.id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
-        };
+        return mapUser(row);
     }
 
     async getUsersWhoWantEmails(missionPost = false) {
@@ -496,15 +490,7 @@ class DbClient {
         `;
 
         const rows = await this.client(userInsertQuery, [email, password, username, firstName, lastName]);
-        const row = rows[0];
-        const user: User = {
-            id: row.id,
-            email: row.email,
-            password: row.password,
-            username: row.username,
-            firstName: row.first_name,
-            lastName: row.last_name,
-        };
+        const user: User = mapUser(rows[0]);
 
         // Set default user preferences
         const userPreferenceInsertQuery = `
@@ -571,11 +557,7 @@ class DbClient {
         }
 
         return {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            firstName: user.first_name,
-            lastName: user.last_name,
+            ...mapUser(user),
             userPreferences: {
                 postNotifications: rows[0].post_notifications,
                 missionNotifications: rows[0].mission_notifications,
@@ -587,12 +569,17 @@ class DbClient {
 
     async getUsersByIds(
         ids: string[],
-        postId?: string,
-    ): Promise<{ email: string; replyNotifications: boolean; hasCommentInPost: boolean }[]> {
+        threadId?: string,
+    ): Promise<{ email: string; replyNotifications: boolean; hasCommentInThread: boolean }[]> {
         if (!ids.length) return [];
         const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
-        const hasCommentExpr = postId
-            ? `EXISTS(SELECT 1 FROM comments c WHERE c.user_id = u.id AND c.post_id = $${ids.length + 1}) AS has_comment`
+        const hasCommentExpr = threadId
+            ? `EXISTS(
+                SELECT 1 FROM comments c
+                WHERE c.user_id = u.id
+                AND c.deleted_at IS NULL
+                AND (c.id = $${ids.length + 1} OR c.parent_comment_id = $${ids.length + 1})
+            ) AS has_comment`
             : `FALSE AS has_comment`;
         const query = `
             SELECT u.email, up.reply_notifications, ${hasCommentExpr}
@@ -600,12 +587,12 @@ class DbClient {
             LEFT JOIN user_preferences up ON u.id = up.user_id
             WHERE u.id IN (${placeholders})
         `;
-        const params = postId ? [...ids, postId] : ids;
+        const params = threadId ? [...ids, threadId] : ids;
         const rows = await this.client(query, params);
         return rows.map((row) => ({
             email: row.email,
             replyNotifications: row.reply_notifications,
-            hasCommentInPost: row.has_comment,
+            hasCommentInThread: row.has_comment,
         }));
     }
 

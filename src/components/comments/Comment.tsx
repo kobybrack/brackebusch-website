@@ -75,7 +75,8 @@ export default function CommentComponent({
                                 </div>
                             </div>
                             <div>
-                                {(user?.id === comment.userData.userId || user?.roles?.includes('admin')) && (
+                                {((user && String(user.id) === comment.userData.userId) ||
+                                    user?.roles?.includes('admin')) && (
                                     <div className="dropdown dropdown-left">
                                         <div role="button" className="btn btn-ghost btn-square btn-sm" tabIndex={0}>
                                             <svg
