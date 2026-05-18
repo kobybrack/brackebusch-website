@@ -1,5 +1,19 @@
-import { Comment } from '@/lib/types';
+import { Comment, User } from '@/lib/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+export function useGetUsers(enabled: boolean) {
+    return useQuery<User[]>({
+        queryKey: ['users'],
+        queryFn: async () => {
+            const res = await fetch('/api/users');
+            if (!res.ok) throw new Error('Failed to fetch users');
+            const data = await res.json();
+            return data.users;
+        },
+        enabled,
+        staleTime: 5 * 60 * 1000,
+    });
+}
 
 export function useGetComments(postId: string) {
     return useQuery<Comment[]>({

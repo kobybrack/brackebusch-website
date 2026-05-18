@@ -12,7 +12,7 @@ export interface Post {
 }
 export interface User {
     id: string;
-    email: string;
+    email?: string;
     password?: string;
     username: string;
     firstName?: string;
